@@ -3,7 +3,7 @@ package com.example.lms.model;
 import jakarta.persistence.*;
 
 /**
- * Placeholder entity: Conversation
+ * Placeholder entity: JoinConversation
  * Fields and relations to be implemented by the team.
  */
 @Entity
