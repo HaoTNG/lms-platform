@@ -8,9 +8,9 @@ import java.util.Map;
 @RequestMapping("/api/auth")
 public class AuthController {
 
-    @PostMapping("/register")
+    @PostMapping("/api/register")
     public ResponseEntity<?> register(@RequestBody Map<String,Object> dto) { return ResponseEntity.ok().build(); }
 
-    @PostMapping("/login")
+    @PostMapping("/api/login")
     public ResponseEntity<?> login(@RequestBody Map<String,String> credentials) { return ResponseEntity.ok().build(); }
 }
