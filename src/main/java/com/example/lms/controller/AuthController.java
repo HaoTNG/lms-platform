@@ -3,7 +3,7 @@ package com.example.lms.controller;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import java.util.Map;
-
+//controller ve xac thuc va phan quyen
 @RestController
 @RequestMapping("/api/auth")
 public class AuthController {
