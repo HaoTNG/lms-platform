@@ -1,8 +1,8 @@
 package com.example.lms.dto;
 
 public class UserDTO {
-    private Long id;
-    private String username;
-    private String email;
-    private String role;
+    private Long User_Id;
+    private String Name;
+    private String Email;
+    private String Role;
 }

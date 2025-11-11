@@ -1,14 +1,20 @@
 package com.example.lms.model;
 
 import jakarta.persistence.*;
+import lombok.Data;
 
 /**
  * Placeholder entity: Admin
  * Fields and relations to be implemented by the team.
  */
 @Entity
+@Data
 public class Admin {
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
+
+    @OneToOne
+    @MapsId
+    @JoinColumn(name="User_Id")
+    private User user;
 }

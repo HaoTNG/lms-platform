@@ -14,9 +14,6 @@ public class LmsApplication {
         ApplicationContext context = SpringApplication.run(LmsApplication.class, args);
 
         // In tất cả các bean Spring scan được
-        System.out.println("Beans loaded by Spring Boot:");
-        Arrays.stream(context.getBeanDefinitionNames())
-                .sorted()
-                .forEach(System.out::println);
+        System.out.println("app started");
     }
 }
