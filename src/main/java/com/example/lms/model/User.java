@@ -7,6 +7,7 @@ import jakarta.persistence.*;
  * Fields and relations to be implemented by the team.
  */
 @Entity
+@Table(name = "users")
 public class User {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

@@ -1,7 +1,8 @@
 package com.example.lms.controller;
 
 
-import com.example.lms.service.interf.UserService;
+
+import com.example.lms.service.interf.AdminService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -10,7 +11,7 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("/api/admins")
 @RequiredArgsConstructor
 public class AdminController {
-    private final UserService userService;
+    private final AdminService adminService;
 
-    //cac api o day
+
 }
