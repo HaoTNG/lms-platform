@@ -1,8 +1,17 @@
 package com.example.lms.dto;
 
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
 public class UserDTO {
-    private Long User_Id;
-    private String Name;
-    private String Email;
-    private String Role;
+    private Long userId;
+    private String name;
+    private String email;
+    private String role;
 }

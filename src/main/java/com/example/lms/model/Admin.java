@@ -15,6 +15,6 @@ public class Admin {
 
     @OneToOne
     @MapsId
-    @JoinColumn(name="User_Id")
+    @JoinColumn(name="userId")
     private User user;
 }

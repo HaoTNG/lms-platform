@@ -10,5 +10,10 @@ import jakarta.persistence.*;
 public class Course {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    private Long courseId;
+    private String course_name;
+    private Long max_no_mentee;
+    private String course_status;
+
+
 }

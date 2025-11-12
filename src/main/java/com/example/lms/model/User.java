@@ -13,12 +13,12 @@ import lombok.Data;
 public class User {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long User_ID;
+    private Long userId;
 
-    private String Name;
-    private String Password_hashed;
-    private String Role;
-    private String Email;
+    private String name;
+    private String password_hashed;
+    private String role;
+    private String email;
 
     @OneToOne(mappedBy = "user", cascade = CascadeType.ALL)
     private Admin admin;

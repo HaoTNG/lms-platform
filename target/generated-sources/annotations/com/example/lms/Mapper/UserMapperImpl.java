@@ -18,9 +18,14 @@ public class UserMapperImpl implements UserMapper {
             return null;
         }
 
-        UserDTO userDTO = new UserDTO();
+        UserDTO.UserDTOBuilder userDTO = UserDTO.builder();
 
-        return userDTO;
+        userDTO.userId( user.getUserId() );
+        userDTO.name( user.getName() );
+        userDTO.email( user.getEmail() );
+        userDTO.role( user.getRole() );
+
+        return userDTO.build();
     }
 
     @Override
@@ -30,6 +35,11 @@ public class UserMapperImpl implements UserMapper {
         }
 
         User user = new User();
+
+        user.setUserId( userDTO.getUserId() );
+        user.setName( userDTO.getName() );
+        user.setRole( userDTO.getRole() );
+        user.setEmail( userDTO.getEmail() );
 
         return user;
     }
