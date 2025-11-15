@@ -1,6 +1,10 @@
 package com.example.lms.dto;
 
+import com.example.lms.model.Course;
 import com.example.lms.model.Mentee;
+import com.example.lms.model.Tutor;
+import com.example.lms.model.ReportTicket;
+import com.example.lms.model.Announcement;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import lombok.Data;
 
@@ -12,10 +16,19 @@ public class Response {
     int statusCode;
     String message;
     UserDTO user;
+    Course course;
+    Tutor tutor;
 
     List<UserDTO> userList;
     List<TutorDTO> tutorLIst;
     List<MenteeDTO> menteeList;
-
-
+    List<Course> courseList;
+    
+    // Report Ticket fields
+    ReportTicket reportTicket;
+    List<ReportTicket> reportTicketList;
+    
+    // Announcement fields
+    Announcement announcement;
+    List<Announcement> announcementList;
 }

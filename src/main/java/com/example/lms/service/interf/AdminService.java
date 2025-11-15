@@ -3,14 +3,28 @@ package com.example.lms.service.interf;
 
 import com.example.lms.dto.Response;
 import com.example.lms.dto.UserDTO;
-import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestParam;
+import com.example.lms.dto.AnnouncementDTO;
+import com.example.lms.model.Course;
 
 public interface AdminService {
     Response ManageUser();
     Response GetUserById(String id);
     Response createUser(UserDTO user);
-    Response getAllCourses();
+    Response getAllCourses(int page);
+    Response createCourse(Course course);
 
+    // Report Ticket Management
+    Response getAllReportTickets();
+    Response getReportTicketById(Long ticketId);
+    Response getReportTicketsByStatus(String status);
+    Response updateReportTicketStatus(Long ticketId, String status, String adminResponse);
+
+    // Announcement Management
+    Response sendAnnouncementToAll(AnnouncementDTO announcement);
+    Response sendAnnouncementToMentee(AnnouncementDTO announcement);
+    Response sendAnnouncementToTutor(AnnouncementDTO announcement);
+    Response sendAnnouncementToUser(Long userId, AnnouncementDTO announcement);
+    Response getAllAnnouncements();
+    Response getAnnouncementsByAdmin(Long adminId);
+    Response deleteAnnouncement(Long announcementId);
 }

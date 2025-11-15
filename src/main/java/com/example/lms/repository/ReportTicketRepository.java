@@ -3,6 +3,10 @@ package com.example.lms.repository;
 import com.example.lms.model.ReportTicket;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
+import java.util.List;
 
 @Repository
-public interface ReportTicketRepository extends JpaRepository<ReportTicket, Long> {}
+public interface ReportTicketRepository extends JpaRepository<ReportTicket, Long> {
+    List<ReportTicket> findByStatus(String status);
+    List<ReportTicket> findByMenteeId(Long menteeId);
+}

@@ -4,12 +4,12 @@ package com.example.lms.controller;
 
 import com.example.lms.dto.Response;
 import com.example.lms.dto.UserDTO;
+import com.example.lms.dto.AnnouncementDTO;
+import com.example.lms.model.Course;
 import com.example.lms.service.interf.AdminService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-
-import java.util.List;
 
 @RestController
 @RequestMapping("/api/admin")
@@ -17,11 +17,13 @@ import java.util.List;
 public class AdminController {
     private final AdminService adminService;
 
+    // ==================== USER MANAGEMENT ====================
     @GetMapping("/manage-user")
     public ResponseEntity<Response> getUserList() {
         Response response = adminService.ManageUser();
         return ResponseEntity.status(response.getStatusCode()).body(response);
     }
+
     @PostMapping("/create-user")
     public ResponseEntity<Response> createUser(@RequestBody UserDTO user) {
         Response response = adminService.createUser(user);
@@ -33,4 +35,98 @@ public class AdminController {
         Response response = adminService.GetUserById(id);
         return ResponseEntity.status(response.getStatusCode()).body(response);
     }
+
+    // ==================== COURSE MANAGEMENT ====================
+    @GetMapping("/courses")
+    public ResponseEntity<Response> getAllCourses(@RequestParam(name = "page",defaultValue = "0") int page) {
+        Response response = adminService.getAllCourses(page);
+        return ResponseEntity.status(response.getStatusCode()).body(response);
+    }
+
+    @PostMapping("/courses")
+    public ResponseEntity<Response> createCourse(@RequestBody Course course) {
+        Response response = adminService.createCourse(course);
+        return ResponseEntity.status(response.getStatusCode()).body(response);
+    }
+
+    // ==================== REPORT TICKET MANAGEMENT ====================
+    @GetMapping("/report-tickets")
+    public ResponseEntity<Response> getAllReportTickets() {
+        Response response = adminService.getAllReportTickets();
+        return ResponseEntity.status(response.getStatusCode()).body(response);
+    }
+
+    @GetMapping("/report-tickets/{id}")
+    public ResponseEntity<Response> getReportTicketById(@PathVariable("id") Long ticketId) {
+        Response response = adminService.getReportTicketById(ticketId);
+        return ResponseEntity.status(response.getStatusCode()).body(response);
+    }
+
+    @GetMapping("/report-tickets/status/{status}")
+    public ResponseEntity<Response> getReportTicketsByStatus(@PathVariable("status") String status) {
+        Response response = adminService.getReportTicketsByStatus(status);
+        return ResponseEntity.status(response.getStatusCode()).body(response);
+    }
+
+    @PutMapping("/report-tickets/{id}")
+    public ResponseEntity<Response> updateReportTicketStatus(
+            @PathVariable("id") Long ticketId,
+            @RequestParam String status,
+            @RequestParam(required = false) String adminResponse) {
+        Response response = adminService.updateReportTicketStatus(ticketId, status, adminResponse);
+        return ResponseEntity.status(response.getStatusCode()).body(response);
+    }
+
+    // ==================== ANNOUNCEMENT MANAGEMENT ====================
+    // Gửi thông báo cho tất cả người dùng
+    @PostMapping("/announcements/send-all")
+    public ResponseEntity<Response> sendAnnouncementToAll(@RequestBody AnnouncementDTO announcement) {
+        Response response = adminService.sendAnnouncementToAll(announcement);
+        return ResponseEntity.status(response.getStatusCode()).body(response);
+    }
+
+    // Gửi thông báo cho tất cả mentee
+    @PostMapping("/announcements/send-mentee")
+    public ResponseEntity<Response> sendAnnouncementToMentee(@RequestBody AnnouncementDTO announcement) {
+        Response response = adminService.sendAnnouncementToMentee(announcement);
+        return ResponseEntity.status(response.getStatusCode()).body(response);
+    }
+
+    // Gửi thông báo cho tất cả tutor
+    @PostMapping("/announcements/send-tutor")
+    public ResponseEntity<Response> sendAnnouncementToTutor(@RequestBody AnnouncementDTO announcement) {
+        Response response = adminService.sendAnnouncementToTutor(announcement);
+        return ResponseEntity.status(response.getStatusCode()).body(response);
+    }
+
+    // Gửi thông báo cho một người dùng cụ thể
+    @PostMapping("/announcements/send-user/{userId}")
+    public ResponseEntity<Response> sendAnnouncementToUser(
+            @PathVariable("userId") Long userId,
+            @RequestBody AnnouncementDTO announcement) {
+        Response response = adminService.sendAnnouncementToUser(userId, announcement);
+        return ResponseEntity.status(response.getStatusCode()).body(response);
+    }
+
+    // Lấy tất cả thông báo
+    @GetMapping("/announcements")
+    public ResponseEntity<Response> getAllAnnouncements() {
+        Response response = adminService.getAllAnnouncements();
+        return ResponseEntity.status(response.getStatusCode()).body(response);
+    }
+
+    // Lấy tất cả thông báo của một admin
+    @GetMapping("/announcements/admin/{adminId}")
+    public ResponseEntity<Response> getAnnouncementsByAdmin(@PathVariable("adminId") Long adminId) {
+        Response response = adminService.getAnnouncementsByAdmin(adminId);
+        return ResponseEntity.status(response.getStatusCode()).body(response);
+    }
+
+    // Xóa thông báo
+    @DeleteMapping("/announcements/{announcementId}")
+    public ResponseEntity<Response> deleteAnnouncement(@PathVariable("announcementId") Long announcementId) {
+        Response response = adminService.deleteAnnouncement(announcementId);
+        return ResponseEntity.status(response.getStatusCode()).body(response);
+    }
 }
+

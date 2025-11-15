@@ -1,21 +1,12 @@
-package com.example.lms.model;
+package com.example.lms.dto;
 
-import jakarta.persistence.*;
 import lombok.Data;
 import java.time.LocalDateTime;
 
-@Entity
-@Table(name = "report_tickets")
 @Data
-public class ReportTicket {
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+public class ReportTicketDTO {
     private Long id;
-
-    @ManyToOne
-    @JoinColumn(name = "mentee_id", nullable = false)
-    private Mentee mentee;
-
+    private Long menteeId;
     private String title;
     private String description;
     private String status; // PENDING, RESOLVED, REJECTED

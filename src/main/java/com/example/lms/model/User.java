@@ -2,6 +2,7 @@ package com.example.lms.model;
 
 import jakarta.persistence.*;
 import lombok.Data;
+import java.util.List;
 
 /**
  * Placeholder entity: User
@@ -22,4 +23,7 @@ public class User {
 
     @OneToOne(mappedBy = "user", cascade = CascadeType.ALL)
     private Admin admin;
+
+    @OneToMany(mappedBy = "recipientUser", cascade = CascadeType.ALL)
+    private List<Announcement> announcements;
 }
