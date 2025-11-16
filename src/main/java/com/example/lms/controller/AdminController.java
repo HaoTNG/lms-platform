@@ -19,8 +19,11 @@ public class AdminController {
 
     // ==================== USER MANAGEMENT ====================
     @GetMapping("/manage-user")
-    public ResponseEntity<Response> getUserList() {
-        Response response = adminService.ManageUser();
+    public ResponseEntity<Response> getUserList(
+        @RequestParam(defaultValue = "0") int page,
+        @RequestParam(defaultValue = "10") int size
+    ) {
+        Response response = adminService.ManageUser(page, size);
         return ResponseEntity.status(response.getStatusCode()).body(response);
     }
 
@@ -110,17 +113,26 @@ public class AdminController {
 
     // Lấy tất cả thông báo
     @GetMapping("/announcements")
-    public ResponseEntity<Response> getAllAnnouncements() {
-        Response response = adminService.getAllAnnouncements();
+    public ResponseEntity<Response> getAllAnnouncements(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size
+    ) {
+        Response response = adminService.getAllAnnouncements(page, size);
         return ResponseEntity.status(response.getStatusCode()).body(response);
     }
 
+
     // Lấy tất cả thông báo của một admin
     @GetMapping("/announcements/admin/{adminId}")
-    public ResponseEntity<Response> getAnnouncementsByAdmin(@PathVariable("adminId") Long adminId) {
-        Response response = adminService.getAnnouncementsByAdmin(adminId);
+    public ResponseEntity<Response> getAnnouncementsByAdmin(
+            @PathVariable Long adminId,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size
+    ) {
+        Response response = adminService.getAnnouncementsByAdmin(adminId, page, size);
         return ResponseEntity.status(response.getStatusCode()).body(response);
     }
+
 
     // Xóa thông báo
     @DeleteMapping("/announcements/{announcementId}")

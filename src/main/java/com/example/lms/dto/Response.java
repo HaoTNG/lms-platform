@@ -15,6 +15,9 @@ import java.util.List;
 public class Response {
     int statusCode;
     String message;
+
+    Object data;
+    Pagination pagination;
     UserDTO user;
     Course course;
     Tutor tutor;
@@ -30,5 +33,7 @@ public class Response {
     
     // Announcement fields
     Announcement announcement;
+    AnnouncementDTO announcementDTO;
     List<Announcement> announcementList;
+    List<AnnouncementDTO> announcementListDTO;
 }

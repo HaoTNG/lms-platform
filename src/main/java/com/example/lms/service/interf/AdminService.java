@@ -7,7 +7,7 @@ import com.example.lms.dto.AnnouncementDTO;
 import com.example.lms.model.Course;
 
 public interface AdminService {
-    Response ManageUser();
+    Response ManageUser(int page, int size);
     Response GetUserById(String id);
     Response createUser(UserDTO user);
     Response getAllCourses(int page);
@@ -24,7 +24,7 @@ public interface AdminService {
     Response sendAnnouncementToMentee(AnnouncementDTO announcement);
     Response sendAnnouncementToTutor(AnnouncementDTO announcement);
     Response sendAnnouncementToUser(Long userId, AnnouncementDTO announcement);
-    Response getAllAnnouncements();
-    Response getAnnouncementsByAdmin(Long adminId);
+    Response getAllAnnouncements(int page, int size);
+    Response getAnnouncementsByAdmin(Long adminId, int page, int size);
     Response deleteAnnouncement(Long announcementId);
 }

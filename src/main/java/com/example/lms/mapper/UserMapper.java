@@ -1,4 +1,4 @@
-package com.example.lms.Mapper;
+package com.example.lms.mapper;
 import com.example.lms.dto.UserDTO;
 import com.example.lms.model.User;
 import org.mapstruct.Mapper;
