@@ -1,4 +1,4 @@
-package com.example.lms.Mapper;
+package com.example.lms.mapper;
 
 import com.example.lms.dto.UserDTO;
 import com.example.lms.model.User;
@@ -7,7 +7,7 @@ import org.springframework.stereotype.Component;
 
 @Generated(
     value = "org.mapstruct.ap.MappingProcessor",
-    comments = "version: 1.5.5.Final, compiler: javac, environment: Java 21.0.9 (Microsoft)"
+    comments = "version: 1.5.5.Final, compiler: Eclipse JDT (IDE) 3.44.0.v20251023-0518, environment: Java 21.0.8 (Eclipse Adoptium)"
 )
 @Component
 public class UserMapperImpl implements UserMapper {
@@ -20,10 +20,11 @@ public class UserMapperImpl implements UserMapper {
 
         UserDTO.UserDTOBuilder userDTO = UserDTO.builder();
 
-        userDTO.userId( user.getUserId() );
-        userDTO.name( user.getName() );
         userDTO.email( user.getEmail() );
+        userDTO.name( user.getName() );
+        userDTO.password_hashed( user.getPassword_hashed() );
         userDTO.role( user.getRole() );
+        userDTO.userId( user.getUserId() );
 
         return userDTO.build();
     }
@@ -36,10 +37,11 @@ public class UserMapperImpl implements UserMapper {
 
         User user = new User();
 
-        user.setUserId( userDTO.getUserId() );
-        user.setName( userDTO.getName() );
-        user.setRole( userDTO.getRole() );
         user.setEmail( userDTO.getEmail() );
+        user.setName( userDTO.getName() );
+        user.setPassword_hashed( userDTO.getPassword_hashed() );
+        user.setRole( userDTO.getRole() );
+        user.setUserId( userDTO.getUserId() );
 
         return user;
     }

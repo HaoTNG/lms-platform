@@ -41,8 +41,14 @@ public class AdminController {
 
     // ==================== COURSE MANAGEMENT ====================
     @GetMapping("/courses")
-    public ResponseEntity<Response> getAllCourses(@RequestParam(name = "page",defaultValue = "0") int page) {
-        Response response = adminService.getAllCourses(page);
+    public ResponseEntity<Response> getAllCourses(
+        @RequestParam(name = "page",defaultValue = "0") int page,
+        @RequestParam(name = "size",defaultValue = "10") int size,
+        @RequestParam(required = false) String tutor,
+        @RequestParam(required = false) String status,
+        @RequestParam(required = false) String course_name
+        ) {
+        Response response = adminService.getAllCourses(page, size, tutor, status, course_name  );
         return ResponseEntity.status(response.getStatusCode()).body(response);
     }
 
@@ -115,9 +121,12 @@ public class AdminController {
     @GetMapping("/announcements")
     public ResponseEntity<Response> getAllAnnouncements(
             @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(required = false) String recipientType,
+            @RequestParam(required = false) String title,
+            @RequestParam(required = false) Long adminId
     ) {
-        Response response = adminService.getAllAnnouncements(page, size);
+        Response response = adminService.getAllAnnouncements(page, size, recipientType, title, adminId);
         return ResponseEntity.status(response.getStatusCode()).body(response);
     }
 

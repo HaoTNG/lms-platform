@@ -1,5 +1,6 @@
 package com.example.lms.model;
 
+import com.example.lms.enums.CourseStatus;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -23,7 +24,9 @@ public class Course {
     private Long courseId;
     private String course_name;
     private Long max_no_mentee;
-    private String course_status;
+    @Enumerated(EnumType.STRING)
+    @Column(name = "course_status")
+    private CourseStatus course_status;
     private LocalDate start_date;
     private LocalDate end_date;
     private String tutor;

@@ -1,5 +1,9 @@
 package com.example.lms.service.imple;
 
+import com.example.lms.enums.CourseStatus;
+import com.example.lms.enums.ReportTicketStatus;
+import org.springframework.data.jpa.domain.Specification;
+import jakarta.persistence.criteria.Predicate;
 import com.example.lms.dto.Response;
 import com.example.lms.dto.UserDTO;
 import com.example.lms.mapper.AnnouncementMapper;
@@ -13,6 +17,7 @@ import com.example.lms.model.Admin;
 import com.example.lms.repository.*;
 import com.example.lms.service.interf.AdminService;
 import lombok.RequiredArgsConstructor;
+
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -97,37 +102,93 @@ public class AdminServiceImple implements AdminService {
         return response;
     }
 
-    public Response getAllCourses(int page) {
+    public Response getAllCourses(Integer page, Integer size, String tutor, String status, String course_name) {
         Response response = new Response();
         try {
-            var pageable = PageRequest.of(page, 10); // phân trang 10 course
-            var courses = courseRepository.findAll(pageable).getContent();
+            var pageable = PageRequest.of(page, size);
+
+            CourseStatus enumStatus;
+            if (status != null && !status.isEmpty()) {
+                enumStatus = CourseStatus.fromValue(status); // chỉ chấp nhận OPEN hoặc END
+            } else {
+                enumStatus = null;
+            }
+
+            ;
+            Specification<Course> spec = (root, query, criteriaBuilder) -> {
+                List<Predicate> predicates = new ArrayList<>();
+
+                if (tutor != null && !tutor.isEmpty()) {
+                    predicates.add(criteriaBuilder.equal(root.get("tutor"), tutor));
+                }
+                if (status != null && !status.isEmpty()) {
+                    predicates.add(criteriaBuilder.equal(root.get("course_status"), enumStatus));
+                }
+                if (course_name != null && !course_name.isEmpty()) {
+                    predicates.add(criteriaBuilder.like(root.get("course_name"), "%" + course_name + "%"));
+                }
+
+                return criteriaBuilder.and(predicates.toArray(new Predicate[0]));
+            };
+
+            Page<Course> pageResult = courseRepository.findAll(spec, pageable);
+            
+             
+            
+
+            Map<String, Object> data = new HashMap<>();
+            data.put("content", pageResult.getContent());
+            data.put("page", pageResult.getNumber());
+            data.put("size", pageResult.getSize());
+            data.put("totalItems", pageResult.getTotalElements());
+            data.put("totalPages", pageResult.getTotalPages());
+            data.put("hasNext", pageResult.hasNext());
+            data.put("hasPrevious", pageResult.hasPrevious());
             response.setStatusCode(200);
             response.setMessage("Courses retrieved successfully");
-            response.setUserList(null);
-            response.setMenteeList(null);
-            response.setTutorLIst(null);
-            response.setUser(null);
-            response.setCourseList(courses);
+            response.setData(data);
         } catch (Exception e) {
             response.setStatusCode(400);
-            response.setMessage("Failed to retrieve courses");
+            response.setMessage("Failed to retrieve courses: " + e.getMessage());
         }
         return response;
     }
 
-    public Response createCourse(Course course) {
+    public Response createCourse(Course courseDTO) {
         Response response = new Response();
         try {
+            // Validate status
+            CourseStatus status = (courseDTO.getCourse_status() != null)
+                    ? CourseStatus.fromValue(courseDTO.getCourse_status().name())
+                    : CourseStatus.OPEN;
+
+            // Map DTO -> Entity
+            Course course = Course.builder()
+                    .course_name(courseDTO.getCourse_name())
+                    .tutor(courseDTO.getTutor())
+                    .max_no_mentee(courseDTO.getMax_no_mentee())
+                    .start_date(courseDTO.getStart_date())
+                    .end_date(courseDTO.getEnd_date())
+                    .course_status(status)
+                    .build();
+
             courseRepository.save(course);
+
             response.setStatusCode(200);
             response.setMessage("Course created successfully");
+        } catch (IllegalArgumentException e) {
+            response.setStatusCode(400);
+            response.setMessage("Invalid course status: " + courseDTO.getCourse_status());
         } catch (Exception e) {
             response.setStatusCode(400);
-            response.setMessage("Failed to create course");
+            response.setMessage("Failed to create course: " + e.getMessage());
         }
         return response;
     }
+
+
+
+
 
     // ==================== REPORT TICKET MANAGEMENT ====================
     
@@ -182,8 +243,11 @@ public class AdminServiceImple implements AdminService {
         try {
             ReportTicket ticket = reportTicketRepository.findById(ticketId)
                     .orElseThrow(() -> new RuntimeException("Report ticket not found"));
-            
-            ticket.setStatus(status);
+
+            ReportTicketStatus statuscheck = (ticket.getStatus() != null)
+                    ? ReportTicketStatus.fromValue(ticket.getStatus().name())
+                    : null;
+            ticket.setStatus(statuscheck);
             ticket.setAdminResponse(adminResponse);
             
             if ("RESOLVED".equals(status) || "REJECTED".equals(status)) {
@@ -374,11 +438,33 @@ public class AdminServiceImple implements AdminService {
 
 
     
-    public Response getAllAnnouncements(int page, int size) {
+    public Response getAllAnnouncements(
+        Integer page, Integer size, String recipientType, String title, Long adminId
+        ) {
     Response response = new Response();
     try {
-        Pageable pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());
-        Page<Announcement> pageResult = announcementRepository.findAll(pageable);
+        int pageNumber =  page >= 0 ? page : 0;
+        int pageSize = size >= 0 ? size : 10;
+        Pageable pageable = PageRequest.of(pageNumber, pageSize, Sort.by("createdAt").descending());
+        Specification<Announcement> spec = Specification.where(null);
+
+        if( recipientType != null && !recipientType.isEmpty() ) {
+            spec = spec.and((root, query, criteriaBuilder) ->
+                criteriaBuilder.equal(root.get("recipientType"), recipientType)
+            );
+        }
+        if( title != null && !title.isEmpty() ) {
+            spec = spec.and((root, query, criteriaBuilder) ->
+                criteriaBuilder.like(root.get("title"), "%" + title + "%")
+            );
+        }
+        if( adminId != null ) {
+            spec = spec.and((root, query, criteriaBuilder) ->
+                criteriaBuilder.equal(root.get("admin").get("id"), adminId)
+            );
+        }
+
+        Page<Announcement> pageResult = announcementRepository.findAll(spec, pageable);
 
         List<AnnouncementDTO> dtos = pageResult.getContent()
                 .stream()
@@ -403,7 +489,7 @@ public class AdminServiceImple implements AdminService {
         response.setMessage("Failed to retrieve announcements: " + e.getMessage());
     }
     return response;
-}
+    }
 
 
     

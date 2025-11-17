@@ -14,7 +14,7 @@ public interface AnnouncementMapper {
     @Mapping(target = "recipientUserId", source = "recipientUser.userId")
     AnnouncementDTO toDTO(Announcement announcement);
 
-    // TRƯỜNG HỢP NGƯỢC LẠI: chỉ map phần đơn giản
+    
     @Mapping(target = "admin", ignore = true)
     @Mapping(target = "recipientUser", ignore = true)
     Announcement toEntity(AnnouncementDTO dto);

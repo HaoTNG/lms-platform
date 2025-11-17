@@ -1,5 +1,6 @@
 package com.example.lms.model;
 
+import com.example.lms.enums.ReportTicketStatus;
 import jakarta.persistence.*;
 import lombok.Data;
 import java.time.LocalDateTime;
@@ -18,7 +19,9 @@ public class ReportTicket {
 
     private String title;
     private String description;
-    private String status; // PENDING, RESOLVED, REJECTED
+    @Enumerated(EnumType.STRING)
+    @Column(name = "status")
+    private ReportTicketStatus status;
     private String adminResponse;
     private LocalDateTime createdAt;
     private LocalDateTime resolvedAt;
