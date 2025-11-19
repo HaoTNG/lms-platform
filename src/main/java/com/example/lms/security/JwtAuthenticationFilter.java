@@ -24,6 +24,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         this.jwtUtil = jwtUtil;
     }
 
+
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
             throws ServletException, IOException {
@@ -35,17 +36,17 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 String role = jwtUtil.getRoleFromToken(token);
                 String email = jwtUtil.getEmailFromToken(token);
 
-                // Tạo list authorities từ role
-                List<SimpleGrantedAuthority> authorities = new ArrayList<>();
-                authorities.add(new SimpleGrantedAuthority("ROLE_" + role));
+                // Authorities
+                List<SimpleGrantedAuthority> authorities = List.of(
+                        new SimpleGrantedAuthority("ROLE_" + role)
+                );
 
-                // Tạo Authentication token
-                UsernamePasswordAuthenticationToken authToken = 
-                        new UsernamePasswordAuthenticationToken(email, null, authorities);
-                
-                // Đặt principal với thông tin user
-                authToken.setDetails(new JwtUserDetails(userId, email, role));
-                
+                // Principal = JwtUserDetails
+                JwtUserDetails userDetails = new JwtUserDetails(userId, email, role);
+
+                UsernamePasswordAuthenticationToken authToken =
+                        new UsernamePasswordAuthenticationToken(userDetails, null, authorities);
+
                 SecurityContextHolder.getContext().setAuthentication(authToken);
             }
         } catch (Exception e) {
@@ -54,6 +55,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
         filterChain.doFilter(request, response);
     }
+
 
     /**
      * Lấy JWT token từ cookie

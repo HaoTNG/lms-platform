@@ -1,16 +1,29 @@
 package com.example.lms.controller;
 
+import com.example.lms.dto.LoginRequest;
+import com.example.lms.dto.RegisterRequest;
 import com.example.lms.dto.Response;
 import com.example.lms.dto.UserDTO;
+import com.example.lms.mapper.UserMapper;
 import com.example.lms.model.User;
 import com.example.lms.repository.UserRepository;
+import com.example.lms.security.JwtUserDetails;
 import com.example.lms.security.JwtUtil;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
 
 @RestController
 @RequestMapping("/api/auth")
@@ -20,17 +33,19 @@ public class AuthController {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtUtil jwtUtil;
+    private final UserMapper userMapper;
+
 
     /**
      * Register - Đăng ký tài khoản mới
      */
     @PostMapping("/register")
-    public ResponseEntity<Response> register(@RequestBody UserDTO userDTO, HttpServletResponse response) {
+    public ResponseEntity<Response> register(@RequestBody RegisterRequest userDTO, HttpServletResponse response) {
         Response res = new Response();
         try {
             // Kiểm tra email đã tồn tại
-            if (userRepository.findAll().stream()
-                    .anyMatch(u -> u.getEmail().equals(userDTO.getEmail()))) {
+            boolean exists = userRepository.existsByEmail(userDTO.getEmail());
+            if (exists) {
                 res.setStatusCode(400);
                 res.setMessage("Email already exists");
                 return ResponseEntity.status(400).body(res);
@@ -51,18 +66,22 @@ public class AuthController {
                     savedUser.getEmail(),
                     savedUser.getRole()
             );
+            System.out.println(token);
+            userDTO.setUserId(savedUser.getUserId());
 
             // Set token vào cookie
-            Cookie cookie = new Cookie("Authorization", token);
-            cookie.setHttpOnly(true);
-            cookie.setSecure(false);  // Set true khi production với HTTPS
-            cookie.setPath("/");
-            cookie.setMaxAge(24 * 60 * 60); // 24 hours
-            response.addCookie(cookie);
+            ResponseCookie cookie = ResponseCookie.from("Authorization", token)
+                    .httpOnly(true)
+                    .secure(false) // true khi production HTTPS
+                    .sameSite("Strict")
+                    .path("/")
+                    .maxAge(24 * 60 * 60)
+                    .build();
 
             res.setStatusCode(200);
             res.setMessage("User registered successfully");
-            res.setUser(userDTO);
+            res.setUser(userMapper.toUserDTO(newUser));
+
             return ResponseEntity.ok(res);
         } catch (Exception e) {
             res.setStatusCode(500);
@@ -71,90 +90,81 @@ public class AuthController {
         }
     }
 
+
+
     /**
      * Login - Đăng nhập
      */
     @PostMapping("/login")
     public ResponseEntity<Response> login(
-            @RequestParam String email,
-            @RequestParam String password,
+            @RequestBody LoginRequest loginRequest,
             HttpServletResponse response) {
+
         Response res = new Response();
-        try {
-            // Tìm user bằng email
-            User user = userRepository.findAll().stream()
-                    .filter(u -> u.getEmail().equals(email))
-                    .findFirst()
-                    .orElse(null);
 
-            if (user == null) {
-                res.setStatusCode(401);
-                res.setMessage("Invalid email or password");
-                return ResponseEntity.status(401).body(res);
-            }
+        // Tìm user bằng email
+        User user = userRepository.findByEmail(loginRequest.getEmail())
+                .orElse(null);
 
-            // Kiểm tra password
-            if (!passwordEncoder.matches(password, user.getPassword_hashed())) {
-                res.setStatusCode(401);
-                res.setMessage("Invalid email or password");
-                return ResponseEntity.status(401).body(res);
-            }
-
-            // Tạo JWT token
-            String token = jwtUtil.generateToken(
-                    user.getUserId().toString(),
-                    user.getEmail(),
-                    user.getRole()
-            );
-
-            // Set token vào cookie
-            Cookie cookie = new Cookie("Authorization", token);
-            cookie.setHttpOnly(true);
-            cookie.setSecure(false);  // Set true khi production với HTTPS
-            cookie.setPath("/");
-            cookie.setMaxAge(24 * 60 * 60); // 24 hours
-            response.addCookie(cookie);
-
-            UserDTO userDTO = new UserDTO();
-            userDTO.setName(user.getName());
-            userDTO.setEmail(user.getEmail());
-            userDTO.setRole(user.getRole());
-
-            res.setStatusCode(200);
-            res.setMessage("Login successful");
-            res.setUser(userDTO);
-            return ResponseEntity.ok(res);
-        } catch (Exception e) {
-            res.setStatusCode(500);
-            res.setMessage("Error during login: " + e.getMessage());
-            return ResponseEntity.status(500).body(res);
+        if (user == null || !passwordEncoder.matches(loginRequest.getPassword_hashed(), user.getPassword_hashed())) {
+            res.setStatusCode(401);
+            res.setMessage("Invalid email or password");
+            return ResponseEntity.status(401).body(res);
         }
+
+        String token = jwtUtil.generateToken(
+                user.getUserId().toString(),
+                user.getEmail(),
+                user.getRole()
+        );
+
+        // Set cookie chuẩn, bảo mật tốt hơn
+        ResponseCookie cookie = ResponseCookie.from("Authorization", token)
+                .httpOnly(true)
+                .secure(false) // true khi production HTTPS
+                .sameSite("Strict")
+                .path("/")
+                .maxAge(24 * 60 * 60)
+                .build();
+
+        response.addHeader("Set-Cookie", cookie.toString());
+
+        UserDTO userDTO = new UserDTO();
+        userDTO.setName(user.getName());
+        userDTO.setEmail(user.getEmail());
+        userDTO.setRole(user.getRole());
+
+        res.setStatusCode(200);
+        res.setMessage("Login successful");
+        res.setUser(userDTO);
+        return ResponseEntity.ok(res);
     }
+
 
     /**
      * Logout - Đăng xuất
      */
     @PostMapping("/logout")
     public ResponseEntity<Response> logout(HttpServletResponse response) {
-        Response res = new Response();
-        try {
-            // Xóa cookie Authorization
-            Cookie cookie = new Cookie("Authorization", "");
-            cookie.setHttpOnly(true);
-            cookie.setSecure(false);
-            cookie.setPath("/");
-            cookie.setMaxAge(0);  // Expire immediately
-            response.addCookie(cookie);
 
-            res.setStatusCode(200);
-            res.setMessage("Logout successful");
-            return ResponseEntity.ok(res);
-        } catch (Exception e) {
-            res.setStatusCode(500);
-            res.setMessage("Error during logout: " + e.getMessage());
-            return ResponseEntity.status(500).body(res);
-        }
+        Response res = new Response();
+
+        ResponseCookie cookie = ResponseCookie.from("Authorization", "")
+                .httpOnly(true)
+                .secure(false)
+                .sameSite("Strict")
+                .path("/")
+                .maxAge(0) // expire immediately
+                .build();
+
+        response.addHeader("Set-Cookie", cookie.toString());
+
+        res.setStatusCode(200);
+        res.setMessage("Logout successful");
+
+        return ResponseEntity.ok(res);
     }
+
 
     /**
      * Check authentication status
@@ -162,16 +172,48 @@ public class AuthController {
     @GetMapping("/me")
     public ResponseEntity<Response> getCurrentUser() {
         Response res = new Response();
-        try {
-            // User info sẽ được lấy từ SecurityContext đã set bởi JwtAuthenticationFilter
-            res.setStatusCode(200);
-            res.setMessage("User is authenticated");
-            return ResponseEntity.ok(res);
-        } catch (Exception e) {
+
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+
+        if (auth == null || !auth.isAuthenticated() || auth.getPrincipal().equals("anonymousUser")) {
             res.setStatusCode(401);
-            res.setMessage("Unauthorized: " + e.getMessage());
+            res.setMessage("Unauthorized");
+            System.out.println("a");
+            return ResponseEntity.status(401).body(res);
+
+        }
+
+        Object principal = auth.getPrincipal();
+
+        if (!(principal instanceof JwtUserDetails jwtUser)) {
+            res.setStatusCode(401);
+            res.setMessage("Unauthorized");
+            System.out.println("b");
+            return ResponseEntity.status(401).body(res);
+
+        }
+
+        // Lấy email từ JWT principal
+        String email = jwtUser.getEmail();
+
+        // Lấy user từ DB để trả thông tin đầy đủ
+        User user = userRepository.findByEmail(email).orElse(null);
+
+        if (user == null) {
+            res.setStatusCode(401);
+            res.setMessage("Unauthorized");
+            System.out.println("c");
             return ResponseEntity.status(401).body(res);
         }
+
+        res.setStatusCode(200);
+        res.setMessage("Authenticated");
+        res.setUser(userMapper.toUserDTO(user));
+
+        return ResponseEntity.ok(res);
     }
+
+
+
 }
 

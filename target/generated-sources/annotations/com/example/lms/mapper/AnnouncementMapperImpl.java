@@ -9,7 +9,7 @@ import org.springframework.stereotype.Component;
 
 @Generated(
     value = "org.mapstruct.ap.MappingProcessor",
-    comments = "version: 1.5.5.Final, compiler: Eclipse JDT (IDE) 3.44.0.v20251023-0518, environment: Java 21.0.8 (Eclipse Adoptium)"
+    comments = "version: 1.5.5.Final, compiler: javac, environment: Java 21.0.9 (Arch Linux)"
 )
 @Component
 public class AnnouncementMapperImpl implements AnnouncementMapper {
@@ -24,12 +24,12 @@ public class AnnouncementMapperImpl implements AnnouncementMapper {
 
         announcementDTO.adminId( announcementAdminId( announcement ) );
         announcementDTO.recipientUserId( announcementRecipientUserUserId( announcement ) );
-        announcementDTO.content( announcement.getContent() );
-        announcementDTO.createdAt( announcement.getCreatedAt() );
         announcementDTO.id( announcement.getId() );
-        announcementDTO.isRead( announcement.getIsRead() );
-        announcementDTO.recipientType( announcement.getRecipientType() );
         announcementDTO.title( announcement.getTitle() );
+        announcementDTO.content( announcement.getContent() );
+        announcementDTO.recipientType( announcement.getRecipientType() );
+        announcementDTO.createdAt( announcement.getCreatedAt() );
+        announcementDTO.isRead( announcement.getIsRead() );
 
         return announcementDTO.build();
     }
@@ -42,12 +42,12 @@ public class AnnouncementMapperImpl implements AnnouncementMapper {
 
         Announcement.AnnouncementBuilder announcement = Announcement.builder();
 
-        announcement.content( dto.getContent() );
-        announcement.createdAt( dto.getCreatedAt() );
         announcement.id( dto.getId() );
-        announcement.isRead( dto.getIsRead() );
-        announcement.recipientType( dto.getRecipientType() );
         announcement.title( dto.getTitle() );
+        announcement.content( dto.getContent() );
+        announcement.recipientType( dto.getRecipientType() );
+        announcement.createdAt( dto.getCreatedAt() );
+        announcement.isRead( dto.getIsRead() );
 
         return announcement.build();
     }
