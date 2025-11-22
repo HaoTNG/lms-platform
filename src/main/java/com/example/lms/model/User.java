@@ -19,6 +19,7 @@ public abstract class User {
     private String password;
     private String email;
 
-    @OneToMany(mappedBy = "recipientUser", cascade = CascadeType.ALL)
-    private List<Announcement> announcements;
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL)
+    private List<AnnouncementUser> announcementUsers;
+
 }

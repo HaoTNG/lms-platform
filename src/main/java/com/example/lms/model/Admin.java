@@ -16,6 +16,6 @@ import java.util.List;
 @Data
 @EqualsAndHashCode(callSuper = true)
 public class Admin extends User {
-    @OneToMany(mappedBy = "admin", cascade = CascadeType.ALL)
+    @OneToMany(mappedBy = "sender", cascade = CascadeType.ALL)
     private List<Announcement> announcements;
 }

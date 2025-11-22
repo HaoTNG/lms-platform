@@ -4,7 +4,7 @@ import com.example.lms.enums.RegistrationStatus;
 import jakarta.persistence.*;
 import lombok.Data;
 import java.time.LocalDateTime;
-import java.util.List;
+
 
 /**
  * Placeholder entity: SubjectRegistration

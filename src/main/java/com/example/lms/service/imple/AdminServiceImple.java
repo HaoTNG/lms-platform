@@ -5,6 +5,8 @@ import com.example.lms.enums.ReportTicketStatus;
 import org.springframework.data.jpa.domain.Specification;
 import jakarta.persistence.criteria.Predicate;
 import com.example.lms.dto.Response;
+import com.example.lms.security.JwtUserDetails;
+import org.springframework.security.core.context.SecurityContextHolder;
 import com.example.lms.dto.UserDTO;
 import com.example.lms.mapper.AnnouncementMapper;
 import com.example.lms.mapper.UserMapper;
@@ -160,18 +162,17 @@ public class AdminServiceImple implements AdminService {
         Response response = new Response();
         try {
             // Validate status
-            CourseStatus status = (courseDTO.getCourse_status() != null)
-                    ? CourseStatus.fromValue(courseDTO.getCourse_status().name())
+            CourseStatus status = (courseDTO.getCourseStatus() != null)
+                    ? CourseStatus.fromValue(courseDTO.getCourseStatus().name())
                     : CourseStatus.OPEN;
 
             // Map DTO -> Entity
             Course course = Course.builder()
-                    .course_name(courseDTO.getCourse_name())
-                    .tutor(courseDTO.getTutor())
-                    .max_no_mentee(courseDTO.getMax_no_mentee())
-                    .start_date(courseDTO.getStart_date())
-                    .end_date(courseDTO.getEnd_date())
-                    .course_status(status)
+                    .courseName(courseDTO.getCourseName())
+                    .maxMentee(courseDTO.getMaxMentee())
+                    .startDate(courseDTO.getStartDate())
+                    .endDate(courseDTO.getEndDate())
+                    .courseStatus(status)
                     .build();
 
             courseRepository.save(course);
@@ -180,7 +181,7 @@ public class AdminServiceImple implements AdminService {
             response.setMessage("Course created successfully");
         } catch (IllegalArgumentException e) {
             response.setStatusCode(400);
-            response.setMessage("Invalid course status: " + courseDTO.getCourse_status());
+            response.setMessage("Invalid course status: " + courseDTO.getCourseStatus());
         } catch (Exception e) {
             response.setStatusCode(400);
             response.setMessage("Failed to create course: " + e.getMessage());
@@ -273,7 +274,9 @@ public class AdminServiceImple implements AdminService {
         Response response = new Response();
 
         try {
-            Admin admin = adminRepository.findById(announcementDTO.getAdminId())
+            // Lấy userId từ SecurityContext
+            Long currentUserId = getCurrentUserId();
+            Admin admin = adminRepository.findById(currentUserId)
                     .orElseThrow(() -> new RuntimeException("Admin not found"));
 
             Announcement announcement = Announcement.builder()
@@ -316,7 +319,8 @@ public class AdminServiceImple implements AdminService {
         Response response = new Response();
 
         try {
-            Admin admin = adminRepository.findById(announcementDTO.getAdminId())
+            Long currentUserId = getCurrentUserId();
+            Admin admin = adminRepository.findById(currentUserId)
                     .orElseThrow(() -> new RuntimeException("Admin not found"));
 
             // Lấy tất cả Mentee users
@@ -364,7 +368,8 @@ public class AdminServiceImple implements AdminService {
         Response response = new Response();
 
         try {
-            Admin admin = adminRepository.findById(announcementDTO.getAdminId())
+            Long currentUserId = getCurrentUserId();
+            Admin admin = adminRepository.findById(currentUserId)
                     .orElseThrow(() -> new RuntimeException("Admin not found"));
 
             // Lấy tất cả Tutor users
@@ -416,7 +421,8 @@ public class AdminServiceImple implements AdminService {
             User user = userRepository.findById(userId)
                     .orElseThrow(() -> new RuntimeException("User not found"));
 
-            Admin admin = adminRepository.findById(announcementDTO.getAdminId())
+            Long currentUserId = getCurrentUserId();
+            Admin admin = adminRepository.findById(currentUserId)
                     .orElseThrow(() -> new RuntimeException("Admin not found"));
 
             Announcement announcement = Announcement.builder()
@@ -537,6 +543,18 @@ public class AdminServiceImple implements AdminService {
             response.setMessage("Failed to delete announcement: " + e.getMessage());
         }
         return response;
+    }
+
+    /**
+     * Lấy userId từ SecurityContext (JWT token)
+     */
+    private Long getCurrentUserId() {
+        var authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication != null && authentication.getPrincipal() instanceof JwtUserDetails) {
+            JwtUserDetails userDetails = (JwtUserDetails) authentication.getPrincipal();
+            return Long.parseLong(userDetails.getUserId());
+        }
+        throw new RuntimeException("User not authenticated or invalid token");
     }
 
 }

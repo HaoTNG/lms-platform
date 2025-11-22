@@ -10,8 +10,8 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @Builder
 public class UserDTO {
-    private Long userId;
+    private Long id;
     private String name;
     private String email;
-    private String role;
+    private String role; // ADMIN, TUTOR, MENTEE - derived from type
 }

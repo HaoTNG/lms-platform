@@ -10,10 +10,9 @@ import com.example.lms.repository.UserRepository;
 import com.example.lms.security.JwtUserDetails;
 import com.example.lms.security.JwtUtil;
 import com.example.lms.service.UserFactory;
-import jakarta.servlet.http.Cookie;
+
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
-import org.springframework.data.domain.PageRequest;
 import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
@@ -21,10 +20,6 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
 
 @RestController
 @RequestMapping("/api/auth")
@@ -57,7 +52,7 @@ public class AuthController {
             User newUser = UserFactory.createUser(userRole);
             newUser.setName(userDTO.getName());
             newUser.setEmail(userDTO.getEmail());
-            newUser.setPassword(passwordEncoder.encode(userDTO.getPassword_hashed()));
+            newUser.setPassword(passwordEncoder.encode(userDTO.getPassword()));
 
             User savedUser = userRepository.save(newUser);
 
@@ -106,7 +101,7 @@ public class AuthController {
         User user = userRepository.findByEmail(loginRequest.getEmail())
                 .orElse(null);
 
-        if (user == null || !passwordEncoder.matches(loginRequest.getPassword_hashed(), user.getPassword())) {
+        if (user == null || !passwordEncoder.matches(loginRequest.getPassword(), user.getPassword())) {
             res.setStatusCode(401);
             res.setMessage("Invalid email or password");
             return ResponseEntity.status(401).body(res);
