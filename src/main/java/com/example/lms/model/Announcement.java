@@ -7,6 +7,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Entity
 @Table(name = "announcement")
@@ -21,16 +22,15 @@ public class Announcement {
 
     @ManyToOne
     @JoinColumn(name = "admin_id", nullable = false)
-    private Admin admin;
+    private Admin sender;
 
     private String title;
-    private String content;
-    private String recipientType; // ALL, MENTEE, TUTOR, SPECIFIC
-    
-    @ManyToOne
-    @JoinColumn(name = "recipient_user_id")
-    private User recipientUser; // Dùng nếu recipientType = SPECIFIC
+    @Column(columnDefinition = "TEXT") 
+    private String details;
+    private String recipientType; 
 
     private LocalDateTime createdAt;
-    private Boolean isRead = false;
+
+    @OneToMany(mappedBy = "announcement", cascade = CascadeType.ALL)
+    private List<AnnouncementUser> announcementUsers;
 }

@@ -4,25 +4,20 @@ import jakarta.persistence.*;
 import lombok.Data;
 import java.util.List;
 
-/**
- * Placeholder entity: User
- * Fields and relations to be implemented by the team.
- */
 @Entity
 @Table(name = "users")
+@Inheritance(strategy = InheritanceType.JOINED)
+@DiscriminatorColumn(name = "user_type")
 @Data
-public class User {
+public abstract class User {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long userId;
+    private Long id;
 
     private String name;
-    private String password_hashed;
-    private String role;
+    @Column(name = "password_hashed")
+    private String password;    
     private String email;
-
-    @OneToOne(mappedBy = "user", cascade = CascadeType.ALL)
-    private Admin admin;
 
     @OneToMany(mappedBy = "recipientUser", cascade = CascadeType.ALL)
     private List<Announcement> announcements;

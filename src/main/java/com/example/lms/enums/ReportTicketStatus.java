@@ -4,9 +4,14 @@ import lombok.Getter;
 
 @Getter
 public enum ReportTicketStatus {
-    PENDING,
-    APPROVED,
-    REJECTED;
+    PENDING("Pending"),
+    RESOLVED("Resolved"),
+    REJECTED("Rejected");
+    
+    private final String displayName;
+    ReportTicketStatus(String displayName) {
+        this.displayName = displayName;
+    }
 
     public static ReportTicketStatus fromValue(String value) {
         for (ReportTicketStatus cs : values()) {
