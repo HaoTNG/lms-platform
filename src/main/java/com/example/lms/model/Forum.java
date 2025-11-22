@@ -1,14 +1,22 @@
 package com.example.lms.model;
 
 import jakarta.persistence.*;
+import lombok.Data;
+import java.util.List;
 
-/**
- * Placeholder entity: Forum
- * Fields and relations to be implemented by the team.
- */
 @Entity
+@Table(name = "forums")
+@Data
 public class Forum {
+
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
+
+    @OneToOne
+    @MapsId
+    @JoinColumn(name = "session_id")
+    private Session session;
+
+    @OneToMany(mappedBy = "forum", cascade = CascadeType.ALL)
+    private List<Question> questions;
 }

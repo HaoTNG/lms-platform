@@ -9,6 +9,7 @@ import com.example.lms.model.User;
 import com.example.lms.repository.UserRepository;
 import com.example.lms.security.JwtUserDetails;
 import com.example.lms.security.JwtUtil;
+import com.example.lms.service.UserFactory;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
@@ -51,23 +52,21 @@ public class AuthController {
                 return ResponseEntity.status(400).body(res);
             }
 
-            // Tạo user mới
-            User newUser = new User();
+            // Tạo user mới theo role
+            String userRole = userDTO.getRole() != null ? userDTO.getRole().toUpperCase() : "MENTEE";
+            User newUser = UserFactory.createUser(userRole);
             newUser.setName(userDTO.getName());
             newUser.setEmail(userDTO.getEmail());
-            newUser.setPassword_hashed(passwordEncoder.encode(userDTO.getPassword_hashed()));
-            newUser.setRole(userDTO.getRole() != null ? userDTO.getRole() : "MENTEE");
+            newUser.setPassword(passwordEncoder.encode(userDTO.getPassword_hashed()));
 
             User savedUser = userRepository.save(newUser);
 
             // Tạo JWT token
             String token = jwtUtil.generateToken(
-                    savedUser.getUserId().toString(),
+                    savedUser.getId().toString(),
                     savedUser.getEmail(),
-                    savedUser.getRole()
+                    userRole
             );
-            System.out.println(token);
-            userDTO.setUserId(savedUser.getUserId());
 
             // Set token vào cookie
             ResponseCookie cookie = ResponseCookie.from("Authorization", token)
@@ -77,10 +76,11 @@ public class AuthController {
                     .path("/")
                     .maxAge(24 * 60 * 60)
                     .build();
+            response.addHeader("Set-Cookie", cookie.toString());
 
             res.setStatusCode(200);
             res.setMessage("User registered successfully");
-            res.setUser(userMapper.toUserDTO(newUser));
+            res.setUser(userMapper.toUserDTO(savedUser));
 
             return ResponseEntity.ok(res);
         } catch (Exception e) {
@@ -106,16 +106,19 @@ public class AuthController {
         User user = userRepository.findByEmail(loginRequest.getEmail())
                 .orElse(null);
 
-        if (user == null || !passwordEncoder.matches(loginRequest.getPassword_hashed(), user.getPassword_hashed())) {
+        if (user == null || !passwordEncoder.matches(loginRequest.getPassword_hashed(), user.getPassword())) {
             res.setStatusCode(401);
             res.setMessage("Invalid email or password");
             return ResponseEntity.status(401).body(res);
         }
 
+        // Lấy discriminator value (role) từ user instance
+        String userRole = getUserRoleFromInstance(user);
+
         String token = jwtUtil.generateToken(
-                user.getUserId().toString(),
+                user.getId().toString(),
                 user.getEmail(),
-                user.getRole()
+                userRole
         );
 
         // Set cookie chuẩn, bảo mật tốt hơn
@@ -132,12 +135,26 @@ public class AuthController {
         UserDTO userDTO = new UserDTO();
         userDTO.setName(user.getName());
         userDTO.setEmail(user.getEmail());
-        userDTO.setRole(user.getRole());
+        userDTO.setRole(userRole);
 
         res.setStatusCode(200);
         res.setMessage("Login successful");
         res.setUser(userDTO);
         return ResponseEntity.ok(res);
+    }
+
+    /**
+     * Helper method để lấy role từ user instance
+     */
+    private String getUserRoleFromInstance(User user) {
+        if (user instanceof com.example.lms.model.Admin) {
+            return "ADMIN";
+        } else if (user instanceof com.example.lms.model.Tutor) {
+            return "TUTOR";
+        } else if (user instanceof com.example.lms.model.Mentee) {
+            return "MENTEE";
+        }
+        return "MENTEE"; // Default
     }
 
 

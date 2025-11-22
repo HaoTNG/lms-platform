@@ -15,6 +15,5 @@ public interface AnnouncementRepository extends JpaRepository<Announcement, Long
     List<Announcement> findByAdminId(Long adminId);
     List<Announcement> findByRecipientUser(User recipientUser);
     Page<Announcement> findByAdminId(Long adminId, Pageable pageable);
-    
-
+    Page<Announcement> findBySenderId(Long senderId, Pageable pageable);
 }
