@@ -5,8 +5,9 @@ package com.example.lms.controller;
 import com.example.lms.dto.Response;
 import com.example.lms.dto.UserDTO;
 import com.example.lms.dto.AnnouncementDTO;
-import com.example.lms.model.Course;
+import com.example.lms.model.*;
 import com.example.lms.service.interf.AdminService;
+import com.example.lms.service.interf.UserService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -16,14 +17,22 @@ import org.springframework.web.bind.annotation.*;
 @RequiredArgsConstructor
 public class AdminController {
     private final AdminService adminService;
-
     // ==================== USER MANAGEMENT ====================
     @GetMapping("/manage-user")
-    public ResponseEntity<Response> getUserList(
-        @RequestParam(defaultValue = "0") int page,
-        @RequestParam(defaultValue = "10") int size
+    public ResponseEntity<Response> getUsers(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(required = false) String search,
+            @RequestParam(required = false) String role // "MENTEE", "TUTOR", "ADMIN"
     ) {
-        Response response = adminService.ManageUser(page, size);
+        Class<? extends User> roleClass = switch (role != null ? role.toUpperCase() : "") {
+            case "MENTEE" -> Mentee.class;
+            case "TUTOR" -> Tutor.class;
+            case "ADMIN" -> Admin.class;
+            default -> null; // null = tất cả user
+        };
+
+        Response response = adminService.manageUser(page, size, search, roleClass);
         return ResponseEntity.status(response.getStatusCode()).body(response);
     }
 

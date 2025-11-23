@@ -6,12 +6,18 @@ import com.example.lms.model.Tutor;
 import com.example.lms.model.ReportTicket;
 import com.example.lms.model.Announcement;
 import com.fasterxml.jackson.annotation.JsonInclude;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 import java.util.List;
 
 @Data
 @JsonInclude(JsonInclude.Include.NON_NULL)
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
 public class Response {
     int statusCode;
     String message;
@@ -36,4 +42,5 @@ public class Response {
     AnnouncementDTO announcementDTO;
     List<Announcement> announcementList;
     List<AnnouncementDTO> announcementListDTO;
+
 }

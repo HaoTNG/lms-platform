@@ -5,10 +5,11 @@ import com.example.lms.dto.Response;
 import com.example.lms.dto.UserDTO;
 import com.example.lms.dto.AnnouncementDTO;
 import com.example.lms.model.Course;
+import com.example.lms.model.User;
 
 public interface AdminService {
     //user management
-    Response ManageUser(int page, int size);
+    Response manageUser(int page, int size, String search, Class<? extends User> role);
     Response GetUserById(String id);
     Response createUser(UserDTO user);
     //course management

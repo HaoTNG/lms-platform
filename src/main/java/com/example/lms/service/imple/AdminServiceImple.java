@@ -1,6 +1,8 @@
 package com.example.lms.service.imple;
 
+import com.example.lms.dto.Pagination;
 import com.example.lms.enums.CourseStatus;
+import com.example.lms.enums.RecipientType;
 import com.example.lms.enums.ReportTicketStatus;
 import org.springframework.data.jpa.domain.Specification;
 import jakarta.persistence.criteria.Predicate;
@@ -31,6 +33,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Supplier;
 
 
 @Service
@@ -44,51 +47,76 @@ public class AdminServiceImple implements AdminService {
     private final AnnouncementRepository announcementRepository;
     private final AnnouncementUserRepository announcementUserRepository;
     private final AnnouncementMapper announcementMapper;
-    public Response ManageUser(int page, int size) {
-        Response response = new Response();
-    try {
-        Pageable pageable = PageRequest.of(page, size, Sort.by("id").ascending());
-        Page<User> pageResult = userRepository.findAll(pageable);
+    
+   public Response manageUser(int page, int size, String search, Class<? extends User> roleClass) {
+        try {
+            Pageable pageable = PageRequest.of(page, size, Sort.by("id").ascending());
 
-        List<UserDTO> userDTOs = pageResult.getContent()
-                .stream()
-                .map(userMapper::toUserDTO)
-                .toList();
+            Specification<User> spec = (root, query, cb) -> {
+                List<Predicate> predicates = new ArrayList<>();
 
+                // Filter by role
+                if (roleClass != null) {
+                    predicates.add(cb.equal(root.type(), roleClass));
+                }
 
+                // Filter by search text
+                if (search != null && !search.isBlank()) {
+                    String pattern = "%" + search.toLowerCase() + "%";
+                    predicates.add(cb.or(
+                        cb.like(cb.lower(root.get("name")), pattern),
+                        cb.like(cb.lower(root.get("email")), pattern)
+                    ));
+                }
 
+                return cb.and(predicates.toArray(new Predicate[0]));
+            };
 
-        // Thêm info phân trang
-        Map<String, Object> data = new HashMap<>();
-        data.put("content", userDTOs);
-        data.put("page", pageResult.getNumber());
-        data.put("size", pageResult.getSize());
-        data.put("totalItems", pageResult.getTotalElements());
-        data.put("totalPages", pageResult.getTotalPages());
-        data.put("hasNext", pageResult.hasNext());
-        data.put("hasPrevious", pageResult.hasPrevious());
-        response.setData(data);
-        response.setMessage("Users retrieved successfully");
-        response.setStatusCode(200);
-    } catch (Exception e) {
-        response.setMessage("Users retrieved failed: " + e.getMessage());
-        response.setStatusCode(400);
-    }
-    return response;
+            Page<User> pageResult = userRepository.findAll(spec, pageable);
+
+            List<UserDTO> userDTOs = pageResult.getContent()
+                    .stream()
+                    .map(userMapper::toUserDTO)
+                    .toList();
+
+            var pagination = Pagination.builder()
+                    .content(userDTOs)
+                    .page(pageResult.getNumber())
+                    .size(pageResult.getSize())
+                    .totalItems(pageResult.getTotalElements())
+                    .totalPages(pageResult.getTotalPages())
+                    .hasNext(pageResult.hasNext())
+                    .hasPrevious(pageResult.hasPrevious())
+                    .build();
+
+            return Response.builder()
+                    .statusCode(200)
+                    .message("Users retrieved successfully")
+                    .pagination(pagination)
+                    .build();
+
+        } catch (Exception e) {
+            return Response.builder()
+                    .statusCode(400)
+                    .message("Users retrieved failed: " + e.getMessage())
+                    .build();
+        }
     }
 
     public Response GetUserById(String id) {
-        Response response = new Response();
         try{
             var user = userRepository.findById(Long.parseLong(id)).orElseThrow(() -> new RuntimeException("User not found"));
-            response.setUser(userMapper.toUserDTO(user));
-            response.setMessage("Success");
-            response.setStatusCode(200);
+            return Response.builder()
+                    .statusCode(200)
+                    .message("User retrieved successfully")
+                    .user(userMapper.toUserDTO(user))
+                    .build();
         }catch(Exception e){
-            response.setMessage("Users retrieved failed");
-            response.setStatusCode(400);
+            return Response.builder()
+                    .statusCode(400)
+                    .message("User retrieved failed: " + e.getMessage())
+                    .build();
         }
-        return response;
     }
 
     public Response createUser(UserDTO user) {
@@ -106,56 +134,57 @@ public class AdminServiceImple implements AdminService {
         return response;
     }
 
-    public Response getAllCourses(Integer page, Integer size, String tutor, String status, String course_name) {
-        Response response = new Response();
+    public Response getAllCourses(Integer page, Integer size, String tutorName, String status, String courseName) {
         try {
-            var pageable = PageRequest.of(page, size);
+            Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.ASC, "courseName"));
 
-            CourseStatus enumStatus;
-            if (status != null && !status.isEmpty()) {
-                enumStatus = CourseStatus.fromValue(status); // chỉ chấp nhận OPEN hoặc END
-            } else {
-                enumStatus = null;
+            CourseStatus enumStatus = null;
+            if (status != null && !status.isBlank()) {
+                enumStatus = CourseStatus.fromValue(status);
             }
-
-            ;
-            Specification<Course> spec = (root, query, criteriaBuilder) -> {
+            final CourseStatus finalStatus = enumStatus;
+            Specification<Course> spec = (root, query, cb) -> {
                 List<Predicate> predicates = new ArrayList<>();
 
-                if (tutor != null && !tutor.isEmpty()) {
-                    predicates.add(criteriaBuilder.equal(root.get("tutor"), tutor));
-                }
-                if (status != null && !status.isEmpty()) {
-                    predicates.add(criteriaBuilder.equal(root.get("course_status"), enumStatus));
-                }
-                if (course_name != null && !course_name.isEmpty()) {
-                    predicates.add(criteriaBuilder.like(root.get("course_name"), "%" + course_name + "%"));
+                if (tutorName != null && !tutorName.isBlank()) {
+                    predicates.add(cb.like(cb.lower(root.get("tutor").get("name")), "%" + tutorName.toLowerCase() + "%"));
                 }
 
-                return criteriaBuilder.and(predicates.toArray(new Predicate[0]));
+                if (finalStatus != null) {
+                    predicates.add(cb.equal(root.get("courseStatus"), finalStatus));
+                }
+
+                if (courseName != null && !courseName.isBlank()) {
+                    predicates.add(cb.like(cb.lower(root.get("courseName")), "%" + courseName.toLowerCase() + "%"));
+                }
+
+                return cb.and(predicates.toArray(new Predicate[0]));
             };
 
             Page<Course> pageResult = courseRepository.findAll(spec, pageable);
-            
-             
-            
 
-            Map<String, Object> data = new HashMap<>();
-            data.put("content", pageResult.getContent());
-            data.put("page", pageResult.getNumber());
-            data.put("size", pageResult.getSize());
-            data.put("totalItems", pageResult.getTotalElements());
-            data.put("totalPages", pageResult.getTotalPages());
-            data.put("hasNext", pageResult.hasNext());
-            data.put("hasPrevious", pageResult.hasPrevious());
-            response.setStatusCode(200);
-            response.setMessage("Courses retrieved successfully");
-            response.setData(data);
+            var pagination = Pagination.builder()
+                    .content(pageResult.getContent())
+                    .page(pageResult.getNumber())
+                    .size(pageResult.getSize())
+                    .totalItems(pageResult.getTotalElements())
+                    .totalPages(pageResult.getTotalPages())
+                    .hasNext(pageResult.hasNext())
+                    .hasPrevious(pageResult.hasPrevious())
+                    .build();
+
+            return Response.builder()
+                    .statusCode(200)
+                    .message("Courses retrieved successfully")
+                    .pagination(pagination)
+                    .build();
+
         } catch (Exception e) {
-            response.setStatusCode(400);
-            response.setMessage("Failed to retrieve courses: " + e.getMessage());
+            return Response.builder()
+                    .statusCode(400)
+                    .message("Failed to retrieve courses: " + e.getMessage())
+                    .build();
         }
-        return response;
     }
 
     public Response createCourse(Course courseDTO) {
@@ -270,191 +299,96 @@ public class AdminServiceImple implements AdminService {
 
     // ==================== ANNOUNCEMENT MANAGEMENT ====================
     
-    public Response sendAnnouncementToAll(AnnouncementDTO announcementDTO) {
-        Response response = new Response();
+    
 
+    private Response sendAnnouncement(
+            AnnouncementDTO dto,
+            RecipientType type,
+            Supplier<List<User>> recipientsSupplier) {
+        
         try {
-            // Lấy userId từ SecurityContext
-            Long currentUserId = getCurrentUserId();
-            Admin admin = adminRepository.findById(currentUserId)
+            Admin admin = adminRepository.findById(getCurrentUserId())
                     .orElseThrow(() -> new RuntimeException("Admin not found"));
 
             Announcement announcement = Announcement.builder()
                     .sender(admin)
-                    .title(announcementDTO.getTitle())
-                    .details(announcementDTO.getContent())
-                    .recipientType("ALL")
+                    .title(dto.getTitle())
+                    .details(dto.getContent())
+                    .recipientType(type.name())
                     .createdAt(LocalDateTime.now())
                     .build();
 
             Announcement saved = announcementRepository.save(announcement);
 
-            // Gửi cho tất cả users
-            List<User> allUsers = userRepository.findAll();
-            List<AnnouncementUser> announcementUsers = allUsers.stream()
-                    .map(user -> AnnouncementUser.builder()
-                            .user(user)
-                            .announcement(saved)
-                            .isRead(false)
-                            .build())
-                    .toList();
-
-            announcementUserRepository.saveAll(announcementUsers);
-
-            response.setStatusCode(200);
-            response.setMessage("Announcement sent to all users successfully");
-            response.setAnnouncement(saved);
-
-        } catch (Exception e) {
-            response.setStatusCode(400);
-            response.setMessage("Failed to send announcement: " + e.getMessage());
-        }
-
-        return response;
-    }
-
-
-    
-    public Response sendAnnouncementToMentee(AnnouncementDTO announcementDTO) {
-        Response response = new Response();
-
-        try {
-            Long currentUserId = getCurrentUserId();
-            Admin admin = adminRepository.findById(currentUserId)
-                    .orElseThrow(() -> new RuntimeException("Admin not found"));
-
-            // Lấy tất cả Mentee users
-            List<User> mentees = userRepository.findAll()
+            List<AnnouncementUser> annUsers = recipientsSupplier.get()
                     .stream()
-                    .filter(u -> u instanceof com.example.lms.model.Mentee)
-                    .toList();
-
-            Announcement announcement = Announcement.builder()
-                    .sender(admin)
-                    .title(announcementDTO.getTitle())
-                    .details(announcementDTO.getContent())
-                    .recipientType("MENTEE")
-                    .createdAt(LocalDateTime.now())
-                    .build();
-
-            Announcement saved = announcementRepository.save(announcement);
-
-            // Tạo announcement users cho mentees
-            List<AnnouncementUser> announcementUsers = mentees.stream()
-                    .map(user -> AnnouncementUser.builder()
-                            .user(user)
+                    .map(u -> AnnouncementUser.builder()
+                            .user(u)
                             .announcement(saved)
                             .isRead(false)
                             .build())
                     .toList();
 
-            announcementUserRepository.saveAll(announcementUsers);
+            announcementUserRepository.saveAll(annUsers);
 
-            response.setStatusCode(200);
-            response.setMessage("Announcement sent to all mentees successfully");
-            response.setAnnouncement(saved);
-
-        } catch (Exception e) {
-            response.setStatusCode(400);
-            response.setMessage("Failed to send announcement: " + e.getMessage());
-        }
-
-        return response;
-    }
-
-
-    
-    public Response sendAnnouncementToTutor(AnnouncementDTO announcementDTO) {
-        Response response = new Response();
-
-        try {
-            Long currentUserId = getCurrentUserId();
-            Admin admin = adminRepository.findById(currentUserId)
-                    .orElseThrow(() -> new RuntimeException("Admin not found"));
-
-            // Lấy tất cả Tutor users
-            List<User> tutors = userRepository.findAll()
-                    .stream()
-                    .filter(u -> u instanceof com.example.lms.model.Tutor)
-                    .toList();
-
-            Announcement announcement = Announcement.builder()
-                    .sender(admin)
-                    .title(announcementDTO.getTitle())
-                    .details(announcementDTO.getContent())
-                    .recipientType("TUTOR")
-                    .createdAt(LocalDateTime.now())
+            return Response.builder().statusCode(200)
+                    .message("Announcement sent successfully")
+                    .data(announcementMapper.toDTO(saved))
                     .build();
 
-            Announcement saved = announcementRepository.save(announcement);
-
-            // Tạo announcement users cho tutors
-            List<AnnouncementUser> announcementUsers = tutors.stream()
-                    .map(user -> AnnouncementUser.builder()
-                            .user(user)
-                            .announcement(saved)
-                            .isRead(false)
-                            .build())
-                    .toList();
-
-            announcementUserRepository.saveAll(announcementUsers);
-
-            response.setStatusCode(200);
-            response.setMessage("Announcement sent to all tutors successfully");
-            response.setAnnouncement(saved);
-
         } catch (Exception e) {
-            response.setStatusCode(400);
-            response.setMessage("Failed to send announcement: " + e.getMessage());
+            return Response.builder()
+                    .statusCode(400)
+                    .message("Failed to send announcement: " + e.getMessage())
+                    .build();
         }
-
-        return response;
     }
+
+
 
 
 
     
-    public Response sendAnnouncementToUser(Long userId, AnnouncementDTO announcementDTO) {
-        Response response = new Response();
-
-        try {
-            User user = userRepository.findById(userId)
-                    .orElseThrow(() -> new RuntimeException("User not found"));
-
-            Long currentUserId = getCurrentUserId();
-            Admin admin = adminRepository.findById(currentUserId)
-                    .orElseThrow(() -> new RuntimeException("Admin not found"));
-
-            Announcement announcement = Announcement.builder()
-                    .sender(admin)
-                    .title(announcementDTO.getTitle())
-                    .details(announcementDTO.getContent())
-                    .recipientType("SPECIFIC")
-                    .createdAt(LocalDateTime.now())
-                    .build();
-
-            Announcement saved = announcementRepository.save(announcement);
-
-            // Tạo announcement user cho specific user
-            AnnouncementUser announcementUser = AnnouncementUser.builder()
-                    .user(user)
-                    .announcement(saved)
-                    .isRead(false)
-                    .build();
-
-            announcementUserRepository.save(announcementUser);
-
-            response.setStatusCode(200);
-            response.setMessage("Announcement sent to user successfully");
-            response.setAnnouncement(saved);
-
-        } catch (Exception e) {
-            response.setStatusCode(400);
-            response.setMessage("Failed to send announcement: " + e.getMessage());
-        }
-
-        return response;
+    public Response sendAnnouncementToAll(AnnouncementDTO dto) {
+        return sendAnnouncement(
+                dto,
+                RecipientType.ALL,
+                userRepository::findAll
+        );
     }
+
+
+
+    public Response sendAnnouncementToMentee(AnnouncementDTO dto) {
+        return sendAnnouncement(
+                dto,
+                RecipientType.MENTEE,
+                userRepository::findAllMentees
+        );
+    }
+
+
+    public Response sendAnnouncementToTutor(AnnouncementDTO dto) {
+        return sendAnnouncement(
+                dto,
+                RecipientType.TUTOR,
+                userRepository::findAllTutors
+        );
+    }
+
+
+    public Response sendAnnouncementToUser(Long userId, AnnouncementDTO dto) {
+        return sendAnnouncement(
+                dto,
+                RecipientType.SPECIFIC,
+                () -> List.of(
+                        userRepository.findById(userId)
+                            .orElseThrow(() -> new RuntimeException("User not found"))
+                )
+        );
+    }
+
+
 
     public Response getAllAnnouncements(
         Integer page, Integer size, String recipientType, String title, Long adminId
