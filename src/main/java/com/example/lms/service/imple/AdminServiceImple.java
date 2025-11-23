@@ -4,6 +4,7 @@ import com.example.lms.dto.Pagination;
 import com.example.lms.enums.CourseStatus;
 import com.example.lms.enums.RecipientType;
 import com.example.lms.enums.ReportTicketStatus;
+import com.example.lms.model.*;
 import org.springframework.data.jpa.domain.Specification;
 import jakarta.persistence.criteria.Predicate;
 import com.example.lms.dto.Response;
@@ -13,12 +14,6 @@ import com.example.lms.dto.UserDTO;
 import com.example.lms.mapper.AnnouncementMapper;
 import com.example.lms.mapper.UserMapper;
 import com.example.lms.dto.AnnouncementDTO;
-import com.example.lms.model.Course;
-import com.example.lms.model.Announcement;
-import com.example.lms.model.AnnouncementUser;
-import com.example.lms.model.ReportTicket;
-import com.example.lms.model.User;
-import com.example.lms.model.Admin;
 import com.example.lms.repository.*;
 import com.example.lms.service.interf.AdminService;
 import lombok.RequiredArgsConstructor;
@@ -30,9 +25,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.function.Supplier;
 
 
@@ -41,6 +34,7 @@ import java.util.function.Supplier;
 public class AdminServiceImple implements AdminService {
     private final AdminRepository adminRepository;
     private final UserRepository userRepository;
+    private final MenteeRepository menteeRepository;
     private final UserMapper userMapper;
     private final CourseRepository courseRepository;
     private final ReportTicketRepository reportTicketRepository;
@@ -223,22 +217,77 @@ public class AdminServiceImple implements AdminService {
 
 
     // ==================== REPORT TICKET MANAGEMENT ====================
-    
-    public Response getAllReportTickets() {
+
+    public Response createReportTicket(ReportTicket reportTicket) {
+        try {
+            // TODO: sau này bạn lấy mentee từ JWT → hiện tại hardcode 2L
+            Mentee mentee = menteeRepository.findMenteeById(2L);
+            reportTicket.setMentee(mentee);
+
+            reportTicket.setAdminResponse(null);
+            reportTicket.setResolvedBy(null);
+
+            var saved = reportTicketRepository.save(reportTicket);
+
+            return Response.builder()
+                    .statusCode(200)
+                    .message("Report ticket created successfully")
+                    .reportTicket(saved)
+                    .build();
+
+        } catch (Exception e) {
+            return Response.builder()
+                    .statusCode(400)
+                    .message("Failed to create report ticket: " + e.getMessage())
+                    .build();
+        }
+    }
+
+
+    public Response deleteReportTicket(Long ticketId) {
         Response response = new Response();
         try {
-            List<ReportTicket> tickets = reportTicketRepository.findAll();
+            reportTicketRepository.deleteById(ticketId);
             response.setStatusCode(200);
-            response.setMessage("Report tickets retrieved successfully");
-            response.setReportTicketList(tickets);
+            response.setMessage("Report ticket deleted successfully");
         } catch (Exception e) {
             response.setStatusCode(400);
-            response.setMessage("Failed to retrieve report tickets: " + e.getMessage());
+            response.setMessage("Failed to delete report ticket: " + e.getMessage());
         }
         return response;
     }
+    public Response getAllReportTickets(int page, int size) {
+        try {
+            Pageable pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());
+            Page<ReportTicket> pageResult = reportTicketRepository.findAll(pageable);
 
-    
+            var pagination = Pagination.builder()
+                    .content(pageResult.getContent())
+                    .page(pageResult.getNumber())
+                    .size(pageResult.getSize())
+                    .totalItems(pageResult.getTotalElements())
+                    .totalPages(pageResult.getTotalPages())
+                    .hasNext(pageResult.hasNext())
+                    .hasPrevious(pageResult.hasPrevious())
+                    .build();
+            
+
+            return Response.builder()
+                    .statusCode(200)
+                    .pagination(pagination)
+                    .message("Report tickets retrieved successfully")
+                    .build();
+
+        } catch (Exception e) {
+            return Response.builder()
+                    .statusCode(400)
+                    .message("Failed to retrieve report tickets: " + e.getMessage())
+                    .build();
+        }
+    }
+
+
+
     public Response getReportTicketById(Long ticketId) {
         Response response = new Response();
         try {
@@ -388,82 +437,80 @@ public class AdminServiceImple implements AdminService {
         );
     }
 
-
-
     public Response getAllAnnouncements(
-        Integer page, Integer size, String recipientType, String title, Long adminId
-        ) {
-        Response response = new Response();
+            Integer page, Integer size, String recipientType, String title, Long adminId
+    ) {
         try {
-            int pageNumber =  page >= 0 ? page : 0;
-            int pageSize = size >= 0 ? size : 10;
+            int pageNumber = (page != null && page >= 0) ? page : 0;
+            int pageSize = (size != null && size > 0) ? size : 10;
             Pageable pageable = PageRequest.of(pageNumber, pageSize, Sort.by("createdAt").descending());
+
             Specification<Announcement> spec = Specification.where(null);
 
-            if( recipientType != null && !recipientType.isEmpty() ) {
-                spec = spec.and((root, query, criteriaBuilder) ->
-                    criteriaBuilder.equal(root.get("recipientType"), recipientType)
-                );
+            if (recipientType != null && !recipientType.isBlank()) {
+                spec = spec.and((root, query, cb) -> cb.equal(root.get("recipientType"), recipientType));
             }
-            if( title != null && !title.isEmpty() ) {
-                spec = spec.and((root, query, criteriaBuilder) ->
-                    criteriaBuilder.like(root.get("title"), "%" + title + "%")
-                );
+            if (title != null && !title.isBlank()) {
+                spec = spec.and((root, query, cb) -> cb.like(cb.lower(root.get("title")), "%" + title.toLowerCase() + "%"));
             }
-            if( adminId != null ) {
-                spec = spec.and((root, query, criteriaBuilder) ->
-                    criteriaBuilder.equal(root.get("sender").get("id"), adminId)
-                );
+            if (adminId != null) {
+                spec = spec.and((root, query, cb) -> cb.equal(root.get("sender").get("id"), adminId));
             }
 
             Page<Announcement> pageResult = announcementRepository.findAll(spec, pageable);
 
-            Map<String, Object> data = new HashMap<>();
-            data.put("content", pageResult.getContent());
-            data.put("page", pageResult.getNumber());
-            data.put("size", pageResult.getSize());
-            data.put("totalItems", pageResult.getTotalElements());
-            data.put("totalPages", pageResult.getTotalPages());
-            data.put("hasNext", pageResult.hasNext());
-            data.put("hasPrevious", pageResult.hasPrevious());
+            var pagination = Pagination.builder()
+                    .content(pageResult.getContent())
+                    .page(pageResult.getNumber())
+                    .size(pageResult.getSize())
+                    .totalItems(pageResult.getTotalElements())
+                    .totalPages(pageResult.getTotalPages())
+                    .hasNext(pageResult.hasNext())
+                    .hasPrevious(pageResult.hasPrevious())
+                    .build();
 
-            response.setStatusCode(200);
-            response.setMessage("Announcements retrieved successfully");
-            response.setData(data);
+            return Response.builder()
+                    .statusCode(200)
+                    .message("Announcements retrieved successfully")
+                    .pagination(pagination)
+                    .build();
 
         } catch (Exception e) {
-            response.setStatusCode(400);
-            response.setMessage("Failed to retrieve announcements: " + e.getMessage());
+            return Response.builder()
+                    .statusCode(400)
+                    .message("Failed to retrieve announcements: " + e.getMessage())
+                    .build();
         }
-        return response;
     }
+
 
 
     
     public Response getAnnouncementsByAdmin(Long adminId, int page, int size) {
-        Response response = new Response();
         try {
             Pageable pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());
             Page<Announcement> pageResult = announcementRepository.findBySenderId(adminId, pageable);
-
-            Map<String, Object> data = new HashMap<>();
-            data.put("content", pageResult.getContent());
-            data.put("page", pageResult.getNumber());
-            data.put("size", pageResult.getSize());
-            data.put("totalItems", pageResult.getTotalElements());
-            data.put("totalPages", pageResult.getTotalPages());
-            data.put("hasNext", pageResult.hasNext());
-            data.put("hasPrevious", pageResult.hasPrevious());
-
-            response.setStatusCode(200);
-            response.setMessage("Announcements retrieved successfully");
-            response.setData(data);
+            var pagination = Pagination.builder()
+                    .content(pageResult.getContent())
+                    .page(pageResult.getNumber())
+                    .size(pageResult.getSize())
+                    .totalItems(pageResult.getTotalElements())
+                    .totalPages(pageResult.getTotalPages())
+                    .hasNext(pageResult.hasNext())
+                    .hasPrevious(pageResult.hasPrevious())
+                    .build();
+            return Response.builder()
+                    .statusCode(200)
+                    .message("Announcements retrieved successfully")
+                    .pagination(pagination)
+                    .build();
 
         } catch (Exception e) {
-            response.setStatusCode(400);
-            response.setMessage("Failed to retrieve announcements: " + e.getMessage());
+            return Response.builder()
+                    .statusCode(400)
+                    .message("Failed to retrieve announcements: " + e.getMessage())
+                    .build();
         }
-        return response;
     }
 
     public Response deleteAnnouncement(Long announcementId) {

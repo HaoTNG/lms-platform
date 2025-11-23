@@ -5,9 +5,10 @@ package com.example.lms.controller;
 import com.example.lms.dto.Response;
 import com.example.lms.dto.UserDTO;
 import com.example.lms.dto.AnnouncementDTO;
+import com.example.lms.dto.AdminAnalyticsDTO;
 import com.example.lms.model.*;
 import com.example.lms.service.interf.AdminService;
-import com.example.lms.service.interf.UserService;
+import com.example.lms.service.interf.AdminAnalyticsService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -17,6 +18,17 @@ import org.springframework.web.bind.annotation.*;
 @RequiredArgsConstructor
 public class AdminController {
     private final AdminService adminService;
+    private final AdminAnalyticsService adminAnalyticsService;
+
+
+
+
+
+
+
+
+
+
     // ==================== USER MANAGEMENT ====================
     @GetMapping("/manage-user")
     public ResponseEntity<Response> getUsers(
@@ -68,9 +80,24 @@ public class AdminController {
     }
 
     // ==================== REPORT TICKET MANAGEMENT ====================
+    @PostMapping("/report-tickets")
+    public ResponseEntity<Response> createReportTicket(@RequestBody ReportTicket reportTicket) {
+        Response response = adminService.createReportTicket(reportTicket);
+        return ResponseEntity.status(response.getStatusCode()).body(response);
+    }
+    
+    @DeleteMapping("/report-tickets/{id}")
+    public ResponseEntity<Response> deleteReportTicket(@PathVariable("id") Long ticketId) {
+        Response response = adminService.deleteReportTicket(ticketId);
+        return ResponseEntity.status(response.getStatusCode()).body(response);
+    }
+
     @GetMapping("/report-tickets")
-    public ResponseEntity<Response> getAllReportTickets() {
-        Response response = adminService.getAllReportTickets();
+    public ResponseEntity<Response> getAllReportTickets(
+            @RequestParam(name = "page",defaultValue = "0") int page,
+            @RequestParam(name = "size",defaultValue = "10") int size
+    ) {
+        Response response = adminService.getAllReportTickets(page, size);
         return ResponseEntity.status(response.getStatusCode()).body(response);
     }
 
@@ -157,6 +184,51 @@ public class AdminController {
     public ResponseEntity<Response> deleteAnnouncement(@PathVariable("announcementId") Long announcementId) {
         Response response = adminService.deleteAnnouncement(announcementId);
         return ResponseEntity.status(response.getStatusCode()).body(response);
+    }
+
+    // ==================== ANALYTICS ====================
+    // Lấy tất cả analytics
+    @GetMapping("/analytics")
+    public ResponseEntity<Response> getAllAnalytics() {
+        AdminAnalyticsDTO analytics = adminAnalyticsService.getAllAnalytics();
+        return ResponseEntity.ok(Response.builder()
+                .statusCode(200)
+                .message("Analytics retrieved successfully")
+                .data(analytics)
+                .build());
+    }
+
+    // Lấy thống kê hệ thống
+    @GetMapping("/analytics/system")
+    public ResponseEntity<Response> getSystemStatistics() {
+        AdminAnalyticsDTO.SystemStatsDTO stats = adminAnalyticsService.getSystemStatistics();
+        return ResponseEntity.ok(Response.builder()
+                .statusCode(200)
+                .message("System statistics retrieved successfully")
+                .data(stats)
+                .build());
+    }
+
+    // Lấy analytics sinh viên
+    @GetMapping("/analytics/students")
+    public ResponseEntity<Response> getStudentAnalytics() {
+        AdminAnalyticsDTO.StudentAnalyticsDTO analytics = adminAnalyticsService.getStudentAnalytics();
+        return ResponseEntity.ok(Response.builder()
+                .statusCode(200)
+                .message("Student analytics retrieved successfully")
+                .data(analytics)
+                .build());
+    }
+
+    // Lấy analytics giáo viên
+    @GetMapping("/analytics/tutors")
+    public ResponseEntity<Response> getTutorAnalytics() {
+        AdminAnalyticsDTO.TutorAnalyticsDTO analytics = adminAnalyticsService.getTutorAnalytics();
+        return ResponseEntity.ok(Response.builder()
+                .statusCode(200)
+                .message("Tutor analytics retrieved successfully")
+                .data(analytics)
+                .build());
     }
 }
 

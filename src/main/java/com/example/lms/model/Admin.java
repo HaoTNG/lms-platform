@@ -16,6 +16,9 @@ import java.util.List;
 @Data
 @EqualsAndHashCode(callSuper = true)
 public class Admin extends User {
+    @OneToMany(mappedBy = "resolvedBy", cascade = CascadeType.ALL)
+    private List<ReportTicket> reportTickets;
+
     @OneToMany(mappedBy = "sender", cascade = CascadeType.ALL)
     private List<Announcement> announcements;
 }

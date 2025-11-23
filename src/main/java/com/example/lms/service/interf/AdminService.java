@@ -5,6 +5,7 @@ import com.example.lms.dto.Response;
 import com.example.lms.dto.UserDTO;
 import com.example.lms.dto.AnnouncementDTO;
 import com.example.lms.model.Course;
+import com.example.lms.model.ReportTicket;
 import com.example.lms.model.User;
 
 public interface AdminService {
@@ -17,7 +18,9 @@ public interface AdminService {
     Response createCourse(Course course);
 
     // Report Ticket Management
-    Response getAllReportTickets();
+    Response createReportTicket(ReportTicket reportTicket);
+    Response deleteReportTicket(Long ticketId);
+    Response getAllReportTickets(int page, int size);
     Response getReportTicketById(Long ticketId);
     Response getReportTicketsByStatus(String status);
     Response updateReportTicketStatus(Long ticketId, String status, String adminResponse);
