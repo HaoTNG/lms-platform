@@ -4,7 +4,6 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import java.util.Map;
 
 @Data
 @NoArgsConstructor
@@ -35,7 +34,6 @@ public class AdminAnalyticsDTO {
         // Course statistics
         private Long totalCourses;
         private Long activeCourses;
-        private Long upcomingCourses;
         private Long finishedCourses;
         
         // Enrollment statistics
@@ -82,22 +80,12 @@ public class AdminAnalyticsDTO {
     @Builder
     public static class TutorAnalyticsDTO {
         // Performance metrics per tutor
-        private Map<String, TutorPerformanceDTO> tutorPerformances;
+        
+        private Double courseCompletionRate;
+        private Double averageRating;
     }
     
-    @Data
-    @NoArgsConstructor
-    @AllArgsConstructor
-    @Builder
-    public static class TutorPerformanceDTO {
-        private Long tutorId;
-        private String tutorName;
-        private Double averageRating;
-        private Long totalCourses;
-        private Long completedCourses;
-        private Double courseCompletionRate; // percentage
-        private StudentDistributionDTO studentDistribution;
-    }
+    
     
     @Data
     @NoArgsConstructor

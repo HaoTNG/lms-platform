@@ -28,4 +28,17 @@ public interface UserRepository extends JpaRepository<User, Long> {
 
 
     Page<User> findAll(Specification<User> spec, Pageable pageable);
+
+    @Query("SELECT COUNT(u) FROM User u")
+    long countTotalUsers();
+
+    @Query("SELECT COUNT(a) FROM Admin a")
+    long countAdmins();
+
+    @Query("SELECT COUNT(t) FROM Tutor t")
+    long countTutors();
+
+    @Query("SELECT COUNT(m) FROM Mentee m")
+    long countMentees();
+
 }

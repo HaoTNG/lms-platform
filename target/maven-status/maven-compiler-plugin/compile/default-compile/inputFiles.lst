@@ -44,6 +44,7 @@
 /home/rat/spec/src/main/java/com/example/lms/repository/AdminRepository.java
 /home/rat/spec/src/main/java/com/example/lms/dto/UserDTO.java
 /home/rat/spec/src/main/java/com/example/lms/model/Message.java
+/home/rat/spec/src/main/java/com/example/lms/dto/AdminAnalyticsDTO.java
 /home/rat/spec/src/main/java/com/example/lms/security/JwtAuthenticationFilter.java
 /home/rat/spec/src/main/java/com/example/lms/repository/SessionRepository.java
 /home/rat/spec/src/main/java/com/example/lms/model/Submission.java
@@ -52,6 +53,7 @@
 /home/rat/spec/src/main/java/com/example/lms/dto/TutorDTO.java
 /home/rat/spec/src/main/java/com/example/lms/security/JwtUserDetails.java
 /home/rat/spec/src/main/java/com/example/lms/config/SecurityConfig.java
+/home/rat/spec/src/main/java/com/example/lms/service/interf/AdminAnalyticsService.java
 /home/rat/spec/src/main/java/com/example/lms/dto/MenteeDTO.java
 /home/rat/spec/src/main/java/com/example/lms/enums/RegistrationStatus.java
 /home/rat/spec/src/main/java/com/example/lms/repository/SubjectRegistrationRepository.java
@@ -77,4 +79,6 @@
 /home/rat/spec/src/main/java/com/example/lms/model/Announcement.java
 /home/rat/spec/src/main/java/com/example/lms/dto/LoginRequest.java
 /home/rat/spec/src/main/java/com/example/lms/repository/TutorRepository.java
+/home/rat/spec/src/main/java/com/example/lms/enums/RecipientType.java
 /home/rat/spec/src/main/java/com/example/lms/model/Conversation.java
+/home/rat/spec/src/main/java/com/example/lms/service/imple/AdminAnalyticsServiceImpl.java

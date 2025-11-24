@@ -24,7 +24,7 @@ public class AdminController {
 
 
 
-
+    
 
 
 
@@ -190,12 +190,8 @@ public class AdminController {
     // Lấy tất cả analytics
     @GetMapping("/analytics")
     public ResponseEntity<Response> getAllAnalytics() {
-        AdminAnalyticsDTO analytics = adminAnalyticsService.getAllAnalytics();
-        return ResponseEntity.ok(Response.builder()
-                .statusCode(200)
-                .message("Analytics retrieved successfully")
-                .data(analytics)
-                .build());
+        Response response = adminAnalyticsService.getAllAnalytics();
+        return ResponseEntity.status(response.getStatusCode()).body(response);
     }
 
     // Lấy thống kê hệ thống
