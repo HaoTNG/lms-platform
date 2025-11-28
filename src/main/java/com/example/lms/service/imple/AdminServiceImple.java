@@ -13,7 +13,9 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import com.example.lms.dto.UserDTO;
 import com.example.lms.mapper.AnnouncementMapper;
 import com.example.lms.mapper.UserMapper;
+import com.example.lms.mapper.CourseMapper;
 import com.example.lms.dto.AnnouncementDTO;
+import com.example.lms.dto.CourseDTO;
 import com.example.lms.repository.*;
 import com.example.lms.service.interf.AdminService;
 import lombok.RequiredArgsConstructor;
@@ -37,6 +39,8 @@ public class AdminServiceImple implements AdminService {
     private final MenteeRepository menteeRepository;
     private final UserMapper userMapper;
     private final CourseRepository courseRepository;
+    private final CourseMapper courseMapper;
+    private final SubjectRegistrationRepository subjectRegistrationRepository;
     private final ReportTicketRepository reportTicketRepository;
     private final AnnouncementRepository announcementRepository;
     private final AnnouncementUserRepository announcementUserRepository;
@@ -157,8 +161,12 @@ public class AdminServiceImple implements AdminService {
 
             Page<Course> pageResult = courseRepository.findAll(spec, pageable);
 
+            var courseDTOs = pageResult.getContent().stream()
+                    .map(courseMapper::toDTO)
+                    .toList();
+            
             var pagination = Pagination.builder()
-                    .content(pageResult.getContent())
+                    .content(courseDTOs)
                     .page(pageResult.getNumber())
                     .size(pageResult.getSize())
                     .totalItems(pageResult.getTotalElements())
@@ -184,6 +192,24 @@ public class AdminServiceImple implements AdminService {
     public Response createCourse(Course courseDTO) {
         Response response = new Response();
         try {
+            // Validate subjectRegistration exists
+            if (courseDTO.getSubjectRegistration() == null || courseDTO.getSubjectRegistration().getId() == null) {
+                response.setStatusCode(400);
+                response.setMessage("SubjectRegistration ID is required");
+                return response;
+            }
+
+            // Fetch SubjectRegistration from DB
+            SubjectRegistration subjectRegistration = subjectRegistrationRepository
+                    .findById(courseDTO.getSubjectRegistration().getId())
+                    .orElse(null);
+
+            if (subjectRegistration == null) {
+                response.setStatusCode(400);
+                response.setMessage("SubjectRegistration not found with ID: " + courseDTO.getSubjectRegistration().getId());
+                return response;
+            }
+
             // Validate status
             CourseStatus status = (courseDTO.getCourseStatus() != null)
                     ? CourseStatus.fromValue(courseDTO.getCourseStatus().name())
@@ -192,16 +218,19 @@ public class AdminServiceImple implements AdminService {
             // Map DTO -> Entity
             Course course = Course.builder()
                     .courseName(courseDTO.getCourseName())
+                    .description(courseDTO.getDescription())
                     .maxMentee(courseDTO.getMaxMentee())
                     .startDate(courseDTO.getStartDate())
                     .endDate(courseDTO.getEndDate())
                     .courseStatus(status)
+                    .subjectRegistration(subjectRegistration)
                     .build();
 
             courseRepository.save(course);
 
-            response.setStatusCode(200);
+            response.setStatusCode(201);
             response.setMessage("Course created successfully");
+            
         } catch (IllegalArgumentException e) {
             response.setStatusCode(400);
             response.setMessage("Invalid course status: " + courseDTO.getCourseStatus());
