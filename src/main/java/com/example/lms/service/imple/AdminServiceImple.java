@@ -458,9 +458,14 @@ public class AdminServiceImple implements AdminService {
             }
 
             Page<Announcement> pageResult = announcementRepository.findAll(spec, pageable);
+            
+            // Convert to DTOs to avoid circular references
+            var announcementDTOs = pageResult.getContent().stream()
+                    .map(announcementMapper::toDTO)
+                    .toList();
 
             var pagination = Pagination.builder()
-                    .content(pageResult.getContent())
+                    .content(announcementDTOs)
                     .page(pageResult.getNumber())
                     .size(pageResult.getSize())
                     .totalItems(pageResult.getTotalElements())
@@ -490,8 +495,14 @@ public class AdminServiceImple implements AdminService {
         try {
             Pageable pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());
             Page<Announcement> pageResult = announcementRepository.findBySenderId(adminId, pageable);
+            
+            // Convert to DTOs to avoid circular references
+            var announcementDTOs = pageResult.getContent().stream()
+                    .map(announcementMapper::toDTO)
+                    .toList();
+            
             var pagination = Pagination.builder()
-                    .content(pageResult.getContent())
+                    .content(announcementDTOs)
                     .page(pageResult.getNumber())
                     .size(pageResult.getSize())
                     .totalItems(pageResult.getTotalElements())
