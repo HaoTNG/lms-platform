@@ -1,25 +1,21 @@
 package com.example.lms.service.imple;
 
-import com.example.lms.dto.Pagination;
+import com.example.lms.dto.*;
 import com.example.lms.enums.CourseStatus;
 import com.example.lms.enums.RecipientType;
 import com.example.lms.enums.ReportTicketStatus;
+import com.example.lms.mapper.ReportTicketMapper;
 import com.example.lms.model.*;
 import org.springframework.data.jpa.domain.Specification;
 import jakarta.persistence.criteria.Predicate;
-import com.example.lms.dto.Response;
 import com.example.lms.security.JwtUserDetails;
 import org.springframework.security.core.context.SecurityContextHolder;
-import com.example.lms.dto.UserDTO;
 import com.example.lms.mapper.AnnouncementMapper;
 import com.example.lms.mapper.UserMapper;
 import com.example.lms.mapper.CourseMapper;
-import com.example.lms.dto.AnnouncementDTO;
-import com.example.lms.dto.CourseDTO;
 import com.example.lms.repository.*;
 import com.example.lms.service.interf.AdminService;
 import lombok.RequiredArgsConstructor;
-
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -45,7 +41,7 @@ public class AdminServiceImple implements AdminService {
     private final AnnouncementRepository announcementRepository;
     private final AnnouncementUserRepository announcementUserRepository;
     private final AnnouncementMapper announcementMapper;
-    
+    private final ReportTicketMapper reportTicketMapper;
    public Response manageUser(int page, int size, String search, Class<? extends User> roleClass) {
         try {
             Pageable pageable = PageRequest.of(page, size, Sort.by("id").ascending());
@@ -290,8 +286,13 @@ public class AdminServiceImple implements AdminService {
             Pageable pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());
             Page<ReportTicket> pageResult = reportTicketRepository.findAll(pageable);
 
+            List<ReportTicketDTO> dto = pageResult.getContent()
+                    .stream()
+                    .map(reportTicketMapper::toDTO)
+                    .toList();
+
             var pagination = Pagination.builder()
-                    .content(pageResult.getContent())
+                    .content(dto)
                     .page(pageResult.getNumber())
                     .size(pageResult.getSize())
                     .totalItems(pageResult.getTotalElements())
@@ -349,31 +350,41 @@ public class AdminServiceImple implements AdminService {
 
     
     public Response updateReportTicketStatus(Long ticketId, String status, String adminResponse) {
-        Response response = new Response();
-        try {
-            ReportTicket ticket = reportTicketRepository.findById(ticketId)
-                    .orElseThrow(() -> new RuntimeException("Report ticket not found"));
+    Response response = new Response();
+    try {
+        ReportTicket ticket = reportTicketRepository.findById(ticketId)
+                .orElseThrow(() -> new RuntimeException("Report ticket not found"));
 
-            ReportTicketStatus statuscheck = (ticket.getStatus() != null)
-                    ? ReportTicketStatus.fromValue(ticket.getStatus().name())
-                    : null;
-            ticket.setStatus(statuscheck);
-            ticket.setAdminResponse(adminResponse);
-            
-            if ("RESOLVED".equals(status) || "REJECTED".equals(status)) {
-                ticket.setResolvedAt(LocalDateTime.now());
-            }
-            
-            reportTicketRepository.save(ticket);
-            response.setStatusCode(200);
-            response.setMessage("Report ticket updated successfully");
-            response.setReportTicket(ticket);
-        } catch (Exception e) {
-            response.setStatusCode(400);
-            response.setMessage("Failed to update report ticket: " + e.getMessage());
+        // Convert string -> enum
+        ReportTicketStatus newStatus;
+        try {
+            newStatus = ReportTicketStatus.valueOf(status.toUpperCase());
+        } catch (IllegalArgumentException e) {
+            throw new RuntimeException("Invalid status value: " + status);
         }
-        return response;
+
+        // Set new status
+        ticket.setStatus(newStatus);
+
+        // Set admin response
+        ticket.setAdminResponse(adminResponse);
+
+        // Auto set resolved time
+        if (newStatus == ReportTicketStatus.APPROVED || newStatus == ReportTicketStatus.REJECTED) {
+            ticket.setResolvedAt(LocalDateTime.now());
+        }
+
+        reportTicketRepository.save(ticket);
+
+        response.setStatusCode(200);
+        response.setMessage("Report ticket updated successfully");
+    } catch (Exception e) {
+        response.setStatusCode(400);
+        response.setMessage("Failed to update report ticket: " + e.getMessage());
     }
+    return response;
+}
+
 
     // ==================== ANNOUNCEMENT MANAGEMENT ====================
     
