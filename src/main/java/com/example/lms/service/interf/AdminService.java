@@ -1,6 +1,7 @@
 package com.example.lms.service.interf;
 
 
+import com.example.lms.dto.CourseDTO;
 import com.example.lms.dto.Response;
 import com.example.lms.dto.UserDTO;
 import com.example.lms.dto.AnnouncementDTO;
@@ -15,7 +16,7 @@ public interface AdminService {
     Response createUser(UserDTO user);
     //course management
     Response getAllCourses(Integer page, Integer size, String tutor, String status, String course_name);
-    Response createCourse(Course course);
+    Response createCourse(CourseDTO courseDTO);
 
     // Report Ticket Management
     Response createReportTicket(ReportTicket reportTicket);

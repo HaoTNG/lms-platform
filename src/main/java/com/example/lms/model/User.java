@@ -4,6 +4,8 @@ import jakarta.persistence.*;
 import lombok.Data;
 import java.util.List;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
 @Entity
 @Table(name = "users")
 @Inheritance(strategy = InheritanceType.JOINED)
@@ -15,7 +17,9 @@ public abstract class User {
     private Long id;
 
     private String name;
+
     @Column(name = "password_hashed")
+    @JsonIgnore
     private String password;
     private String email;
 

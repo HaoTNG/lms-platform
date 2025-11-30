@@ -1,19 +1,21 @@
 package com.example.lms.service.imple;
 
-import com.example.lms.dto.ExerciseDTO;
-import com.example.lms.dto.LessonDTO;
+import com.example.lms.dto.*;
 import com.example.lms.model.*;
 import com.example.lms.repository.*;
+import com.example.lms.security.JwtUserDetails;
 import com.example.lms.service.interf.TutorService;
 import com.example.lms.service.interf.AdminService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
-import com.example.lms.dto.Response;
 import com.example.lms.mapper.CourseMapper;
 
+import java.time.LocalDateTime;
 import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
 
 @Service
 @RequiredArgsConstructor
@@ -32,7 +34,8 @@ public class TutorServiceImple implements TutorService {
     private final UserRepository userRepository;
     private final CourseMapper courseMapper;
     private final LessonRepository lessonRepository;
-
+    private final SubjectRegistrationRepository subjectRegistrationRepository;
+    private final SubjectRepository subjectRepository;
     @Override
     public Response updateCourse(Long courseId, Course courseDTO) {
         Response response = new Response();
@@ -61,6 +64,35 @@ public class TutorServiceImple implements TutorService {
             response.setMessage("Failed to update course: " + e.getMessage());
         }
         return response;
+    }
+
+    @Override
+    public Response getMyCourse() {
+        Response response = new Response();
+        try {
+            Long tutorId = getCurrentUserId();
+
+            // Lấy tất cả subject registrations của tutor
+            List<SubjectRegistration> registrations =
+                    subjectRegistrationRepository.findByTutor_Id(tutorId);
+
+            // Map sang CourseDTO (vì mỗi registration có 1 course)
+            List<CourseDTO> courses = registrations.stream()
+                    .map(SubjectRegistration::getCourse)
+                    .filter(Objects::nonNull)
+                    .map(courseMapper::toDTO)
+                    .toList();
+
+            response.setStatusCode(200);
+            response.setMessage("Courses retrieved successfully");
+            response.setData(courses);
+            return response;
+
+        } catch (Exception e) {
+            response.setStatusCode(400);
+            response.setMessage("Failed to retrieve courses: " + e.getMessage());
+            return response;
+        }
     }
 
     @Override
@@ -245,6 +277,47 @@ public class TutorServiceImple implements TutorService {
         return response;
     }
 
+    @Override
+    public Response subjectRegistration( SubjectRegistrationRequest subjectId) {
+        Response response = new Response();
+        try {
+            var subjectIdt = subjectId.getSubjectId();
+            var tutorId = getCurrentUserId();
+            Tutor tutor = tutorRepository.findById(tutorId).orElseThrow(() -> new IllegalArgumentException("Tutor not found with ID: " + tutorId));
+            Subject subject = subjectRepository.findById(subjectIdt).orElseThrow(() -> new IllegalArgumentException("Subject not found with ID: " + subjectIdt));
+
+            var subject_registration = SubjectRegistration.builder()
+                    .tutor(tutor)
+                    .subject(subject)
+                    .registrationStatus(com.example.lms.enums.RegistrationStatus.PENDING)
+                    .registeredAt(LocalDateTime.now())
+                    .build();
+            subjectRegistrationRepository.save(subject_registration);
+            response.setStatusCode(200);
+            response.setMessage("Subject registration successful");
+        } catch (Exception e) {
+            response.setStatusCode(400);
+            response.setMessage("Failed to register subject: " + e.getMessage());
+        }
+        return response;
+    }
+    @Override
+    public Response getAllSubjectRegistrationsByTutorId() {
+        Response response = new Response();
+        try {
+            var tutorId = getCurrentUserId();
+            List<SubjectRegistration> registrations = subjectRegistrationRepository.findByTutor_Id(tutorId);
+
+            
+            response.setStatusCode(200);
+            response.setMessage("Subject registrations retrieved successfully");
+            response.setData(registrations);
+        } catch (Exception e) {
+            response.setStatusCode(400);
+            response.setMessage("Failed to retrieve subject registrations: " + e.getMessage());
+        }
+        return response;
+    }
     @Override
     public Response getAllMenteesInCourse(Long courseId, int page, int size) {
         try {
@@ -509,7 +582,15 @@ public class TutorServiceImple implements TutorService {
         return adminService.getAnnouncementsByAdmin(adminId, page, size);
     }
 
-    public Response deleteAnnouncement(Long announcementId) {
-        return adminService.deleteAnnouncement(announcementId);
+
+
+
+    private Long getCurrentUserId() {
+        var authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication != null && authentication.getPrincipal() instanceof JwtUserDetails) {
+            JwtUserDetails userDetails = (JwtUserDetails) authentication.getPrincipal();
+            return Long.parseLong(userDetails.getUserId());
+        }
+        throw new RuntimeException("User not authenticated or invalid token");
     }
 }

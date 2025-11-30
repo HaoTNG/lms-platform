@@ -185,39 +185,38 @@ public class AdminServiceImple implements AdminService {
         }
     }
 
-    public Response createCourse(Course courseDTO) {
+    public Response createCourse(CourseDTO courseDTO) {
         Response response = new Response();
         try {
-            // Validate subjectRegistration exists
-            if (courseDTO.getSubjectRegistration() == null || courseDTO.getSubjectRegistration().getId() == null) {
+            if (courseDTO.getSubjectRegistrationId() == null ) {
                 response.setStatusCode(400);
                 response.setMessage("SubjectRegistration ID is required");
                 return response;
             }
 
-            // Fetch SubjectRegistration from DB
             SubjectRegistration subjectRegistration = subjectRegistrationRepository
-                    .findById(courseDTO.getSubjectRegistration().getId())
+                    .findById(courseDTO.getSubjectRegistrationId())
                     .orElse(null);
 
             if (subjectRegistration == null) {
                 response.setStatusCode(400);
-                response.setMessage("SubjectRegistration not found with ID: " + courseDTO.getSubjectRegistration().getId());
+                response.setMessage("SubjectRegistration not found with ID: " + courseDTO.getSubjectRegistrationId());
                 return response;
             }
 
-            // Validate status
             CourseStatus status = (courseDTO.getCourseStatus() != null)
-                    ? CourseStatus.fromValue(courseDTO.getCourseStatus().name())
+                    ? CourseStatus.fromValue(courseDTO.getCourseStatus())
                     : CourseStatus.OPEN;
-
+            
+            var courseName = subjectRegistration.getSubject().getSubjectName();
             // Map DTO -> Entity
             Course course = Course.builder()
-                    .courseName(courseDTO.getCourseName())
+                    .courseName(courseName)
                     .description(courseDTO.getDescription())
                     .maxMentee(courseDTO.getMaxMentee())
                     .startDate(courseDTO.getStartDate())
                     .endDate(courseDTO.getEndDate())
+                    .createdDate(LocalDateTime.now())
                     .courseStatus(status)
                     .subjectRegistration(subjectRegistration)
                     .build();

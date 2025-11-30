@@ -3,15 +3,15 @@ package com.example.lms.service.interf;
 import com.example.lms.dto.ExerciseDTO;
 import com.example.lms.dto.LessonDTO;
 import com.example.lms.dto.Response;
+import com.example.lms.dto.SubjectRegistrationRequest;
 import com.example.lms.model.Course;
-import com.example.lms.model.Exercise;
 
 public interface TutorService {
     // Course management
     Response updateCourse(Long courseId, Course course);
     Response deleteCourse(Long courseId);
     Response getCourseById(Long courseId);
-
+    Response getMyCourse();
     // Mentee management
     Response getAllMenteesInCourse(Long courseId, int page, int size);
 
@@ -32,7 +32,10 @@ public interface TutorService {
     Response joinConversation(Long menteeId, Long tutorId);
     Response sendMessage(Long conversationId, Long senderId, String content);
 
-    
+    // Subject Registration management
+    Response subjectRegistration( SubjectRegistrationRequest subjectId);
+    Response getAllSubjectRegistrationsByTutorId();
+    // Lesson management
     Response getAllLessonByCourseId(Long id);
     Response getLessonByLessonIdAndCourseId(Long lessonId, Long courseId);
     Response createLesson(LessonDTO req);
@@ -40,7 +43,6 @@ public interface TutorService {
     // Announcement management
     Response getAllAnnouncements(Integer page, Integer size, String recipientType, String title, Long adminId);
     Response getAnnouncementsByAdmin(Long adminId, int page, int size);
-    Response deleteAnnouncement(Long announcementId);
 
     //
 }

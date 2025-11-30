@@ -2,7 +2,11 @@ package com.example.lms.model;
 
 import com.example.lms.enums.RegistrationStatus;
 import jakarta.persistence.*;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
+import lombok.NoArgsConstructor;
+
 import java.time.LocalDateTime;
 
 
@@ -13,6 +17,9 @@ import java.time.LocalDateTime;
 @Entity
 @Table(name = "subject_registrations")
 @Data
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
 public class SubjectRegistration {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

@@ -2,10 +2,7 @@ package com.example.lms.controller;
 
 
 
-import com.example.lms.dto.Response;
-import com.example.lms.dto.UserDTO;
-import com.example.lms.dto.AnnouncementDTO;
-import com.example.lms.dto.AdminAnalyticsDTO;
+import com.example.lms.dto.*;
 import com.example.lms.model.*;
 import com.example.lms.service.interf.AdminService;
 import com.example.lms.service.interf.AdminAnalyticsService;
@@ -74,7 +71,7 @@ public class AdminController {
     }
 
     @PostMapping("/courses")
-    public ResponseEntity<Response> createCourse(@RequestBody Course course) {
+    public ResponseEntity<Response> createCourse(@RequestBody CourseDTO course) {
         Response response = adminService.createCourse(course);
         return ResponseEntity.status(response.getStatusCode()).body(response);
     }

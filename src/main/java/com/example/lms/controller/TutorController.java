@@ -5,6 +5,8 @@ import com.example.lms.model.Course;
 import com.example.lms.service.interf.TutorService;
 import com.example.lms.dto.LessonDTO;
 import com.example.lms.dto.Response;
+import com.example.lms.dto.SubjectRegistrationRequest;
+
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -24,20 +26,25 @@ public class TutorController {
         return ResponseEntity.status(response.getStatusCode()).body(response);
     }
 
-    @PutMapping("/courses/{courseId}")
-    public ResponseEntity<Response> updateCourse(@PathVariable Long courseId, @RequestBody Course course) {
-        Response response = tutorService.updateCourse(courseId, course);
-        return ResponseEntity.status(response.getStatusCode()).body(response);
-    }
+   // @PutMapping("/courses/{courseId}")
+   // public ResponseEntity<Response> updateCourse(@PathVariable Long courseId, @RequestBody Course course) {
+    //    Response response = tutorService.updateCourse(courseId, course);
+   //     return ResponseEntity.status(response.getStatusCode()).body(response);
+   // }
 
-    @DeleteMapping("/courses/{courseId}")
-    public ResponseEntity<Response> deleteCourse(@PathVariable Long courseId) {
-        Response response = tutorService.deleteCourse(courseId);
-        return ResponseEntity.status(response.getStatusCode()).body(response);
-    }
+   // @DeleteMapping("/courses/{courseId}")
+  //  public ResponseEntity<Response> deleteCourse(@PathVariable Long courseId) {
+   //     Response response = tutorService.deleteCourse(courseId);
+   //     return ResponseEntity.status(response.getStatusCode()).body(response);
+   // }
 
     // ==================== MENTEE & EXERCISE MANAGEMENT ====================
 
+    @GetMapping("/courses/my")
+    public ResponseEntity<Response> getMyCourse(){
+        Response response = tutorService.getMyCourse();
+        return ResponseEntity.status(response.getStatusCode()).body(response);
+    }
     @GetMapping("/courses/{courseId}/mentees")
     public ResponseEntity<Response> getAllMenteesInCourse(
             @PathVariable Long courseId,
@@ -128,7 +135,21 @@ public class TutorController {
         Response response = tutorService.sendMessage(conversationId, senderId, content);
         return ResponseEntity.status(response.getStatusCode()).body(response);
     }
+    // ==================== SUBJECT REGISTRATION MANAGEMENT ====================
 
+    @GetMapping("/subject-registrations")
+    public ResponseEntity<Response> getAllSubjectRegistrationsByTutorId() {
+        Response response = tutorService.getAllSubjectRegistrationsByTutorId();
+        return ResponseEntity.status(response.getStatusCode()).body(response);
+    }
+    @PostMapping("/subject-registrations")
+    public ResponseEntity<Response> subjectRegistration(
+            @RequestBody SubjectRegistrationRequest subjectId
+    ) {
+        Response response = tutorService.subjectRegistration(subjectId);
+        return ResponseEntity.status(response.getStatusCode()).body(response);
+    }
+    // ==================== LESSON MANAGEMENT ====================
     @GetMapping("/lessons/courses/{id}")
     public ResponseEntity<Response> getLessonById(@PathVariable Long id) {
         Response response = tutorService.getAllLessonByCourseId(id);
@@ -177,9 +198,5 @@ public class TutorController {
         return ResponseEntity.status(response.getStatusCode()).body(response);
     }
 
-    @DeleteMapping("/announcements/{announcementId}")
-    public ResponseEntity<Response> deleteAnnouncement(@PathVariable Long announcementId) {
-        Response response = tutorService.deleteAnnouncement(announcementId);
-        return ResponseEntity.status(response.getStatusCode()).body(response);
-    }
+
 }
