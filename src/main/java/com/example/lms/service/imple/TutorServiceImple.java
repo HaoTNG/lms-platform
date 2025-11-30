@@ -1,5 +1,7 @@
 package com.example.lms.service.imple;
 
+import com.example.lms.dto.ExerciseDTO;
+import com.example.lms.dto.LessonDTO;
 import com.example.lms.model.*;
 import com.example.lms.repository.*;
 import com.example.lms.service.interf.TutorService;
@@ -8,7 +10,10 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import com.example.lms.dto.Response;
+import com.example.lms.mapper.CourseMapper;
 
+import java.util.Collections;
+import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -25,6 +30,8 @@ public class TutorServiceImple implements TutorService {
     private final MenteeRepository menteeRepository;
     private final MessageRepository messageRepository;
     private final UserRepository userRepository;
+    private final CourseMapper courseMapper;
+    private final LessonRepository lessonRepository;
 
     @Override
     public Response updateCourse(Long courseId, Course courseDTO) {
@@ -221,10 +228,13 @@ public class TutorServiceImple implements TutorService {
         try {
             Course existingCourse = courseRepository.findById(courseId)
                     .orElseThrow(() -> new IllegalArgumentException("Course not found with ID: " + courseId));
-
+            
+            // Convert to DTO to avoid circular references
+            var courseDTO = courseMapper.toDTO(existingCourse);
+            
             response.setStatusCode(200);
             response.setMessage("Course retrieved successfully");
-            response.setData(existingCourse);
+            response.setData(courseDTO);
         } catch (IllegalArgumentException e) {
             response.setStatusCode(400);
             response.setMessage("Invalid input: " + e.getMessage());
@@ -269,13 +279,18 @@ public class TutorServiceImple implements TutorService {
     }
 
     @Override
-    public Response createExercise(Exercise exercise) {
+    public Response createExercise(ExerciseDTO exercise) {
         try {
-            Exercise saved = exerciseRepository.save(exercise);
+            Exercise forsave = Exercise.builder()
+                    .lesson(lessonRepository.getLessonById(exercise.getLessonId()))
+                    .question(exercise.getQuestion())
+                    .deadline(exercise.getDeadline())
+                    .attemptLimit(exercise.getAttemptLimit())
+                    .build();
+            Exercise saved = exerciseRepository.save(forsave);
             return Response.builder()
                     .statusCode(200)
                     .message("Exercise created successfully")
-                    .data(saved)
                     .build();
         } catch (Exception e) {
             return Response.builder()
@@ -333,6 +348,7 @@ public class TutorServiceImple implements TutorService {
         }
     }
 
+
     @Override
     public Response gradeSubmission(Long submissionId, Double grade) {
         try {
@@ -357,6 +373,132 @@ public class TutorServiceImple implements TutorService {
                     .build();
         }
     }
+    @Override
+    public Response getAllLessonByCourseId(Long id) {
+        try {
+            // Lấy danh sách Lesson theo courseId
+            List<Lesson> lessons = lessonRepository.findByCourse_CourseId(id);
+
+            // Map sang DTO
+            List<LessonDTO> dtos = lessons.stream()
+                    .map(lesson -> {
+                        LessonDTO dto = LessonDTO.builder()
+                                .id(lesson.getId())
+                                .courseId(lesson.getCourse().getCourseId())
+                                .title(lesson.getTitle())
+                                .description(lesson.getDescription())
+                                .build();
+
+                        return dto;
+                    })
+                    .toList();
+
+            return Response.builder()
+                    .statusCode(200)
+                    .message("Lessons retrieved successfully")
+                    .data(dtos)
+                    .build();
+
+        } catch (Exception e) {
+            return Response.builder()
+                    .statusCode(400)
+                    .message("Failed to retrieve lessons: " + e.getMessage())
+                    .build();
+        }
+    }
+
+    @Override
+    public Response getLessonByLessonIdAndCourseId(Long lessonId, Long courseId) {
+        try{
+            List<Lesson> lessons = lessonRepository.findByCourse_CourseId(courseId);
+
+            // Map sang DTO
+            Lesson lesson = lessons.stream()
+                    .filter(l -> l.getId().equals(lessonId))
+                    .findFirst()
+                    .orElseThrow(() -> new RuntimeException("Lesson not found"));
+            LessonDTO dto = LessonDTO.builder()
+                    .id(lesson.getId())
+                    .courseId(lesson.getCourse().getCourseId())
+                    .title(lesson.getTitle())
+                    .description(lesson.getDescription())
+                    .exerciseIds(
+                            lesson.getExercises() != null
+                                    ? lesson.getExercises().stream().map(e -> e.getId()).toList()
+                                    : Collections.emptyList()
+                    )
+                    .resourceIds(
+                            lesson.getResources() != null
+                                    ? lesson.getResources().stream().map(r -> r.getId()).toList()
+                                    : Collections.emptyList()
+                    )
+                    .build();
+
+
+            return Response.builder()
+                    .statusCode(200)
+                    .message("Lessons retrieved successfully")
+                    .data(dto)
+                    .build();
+        }catch (Exception e){
+            return Response.builder()
+                    .statusCode(400)
+                    .message("Failed to retrieve lessons: " + e.getMessage())
+                    .build();
+        }
+    }
+
+    public Response createLesson(LessonDTO req) {
+        try{
+            if (req.getCourseId() == null) {
+                throw new IllegalArgumentException("courseId is required for create");
+            }
+
+            Course course = courseRepository.findById(req.getCourseId())
+                    .orElseThrow(() -> new RuntimeException("Course not found with id=" + req.getCourseId()));
+
+            Lesson lesson = Lesson.builder()
+                    .course(course)
+                    .title(req.getTitle())
+                    .description(req.getDescription())
+                    .build();
+
+            Lesson saved = lessonRepository.save(lesson);
+            return Response.builder()
+                    .statusCode(200)
+                    .message("successfully created lession")
+                    .build();
+        }catch (Exception e){
+            return Response.builder().statusCode(400).message("Failed to create lesson: " + e.getMessage()).build();
+        }
+
+    }
+
+
+    public Response updateLesson(Long id, LessonDTO req) {
+        try{
+            Lesson lesson = lessonRepository.findById(id)
+                    .orElseThrow(() -> new RuntimeException("Lesson not found with id=" + id));
+
+            // chỉ update nếu field != null (patch-like)
+            if (req.getTitle() != null) lesson.setTitle(req.getTitle());
+            if (req.getDescription() != null) lesson.setDescription(req.getDescription());
+            if (req.getCourseId() != null && !req.getCourseId().equals(lesson.getCourse().getCourseId())) {
+                Course course = courseRepository.findById(req.getCourseId())
+                        .orElseThrow(() -> new RuntimeException("Course not found with id=" + req.getCourseId()));
+                lesson.setCourse(course);
+            }
+
+            Lesson saved = lessonRepository.save(lesson);
+            return Response.builder()
+                    .statusCode(200)
+                    .message("successfully created lession")
+                    .build();
+        }catch (Exception e){
+            return Response.builder().statusCode(400).message("Failed to create lesson: " + e.getMessage()).build();
+        }
+    }
+
 
     // Dùng lại method có sẵn trong adminService
     public Response getAllAnnouncements(Integer page, Integer size, String recipientType, String title, Long adminId) {

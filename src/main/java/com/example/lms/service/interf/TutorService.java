@@ -1,5 +1,7 @@
 package com.example.lms.service.interf;
 
+import com.example.lms.dto.ExerciseDTO;
+import com.example.lms.dto.LessonDTO;
 import com.example.lms.dto.Response;
 import com.example.lms.model.Course;
 import com.example.lms.model.Exercise;
@@ -14,7 +16,7 @@ public interface TutorService {
     Response getAllMenteesInCourse(Long courseId, int page, int size);
 
     // Exercise management
-    Response createExercise(Exercise exercise);
+    Response createExercise(ExerciseDTO exercise);
     Response deleteExercise(Long exerciseId);
 
     // Submission management
@@ -30,6 +32,11 @@ public interface TutorService {
     Response joinConversation(Long menteeId, Long tutorId);
     Response sendMessage(Long conversationId, Long senderId, String content);
 
+    
+    Response getAllLessonByCourseId(Long id);
+    Response getLessonByLessonIdAndCourseId(Long lessonId, Long courseId);
+    Response createLesson(LessonDTO req);
+    Response updateLesson(Long id, LessonDTO req);
     // Announcement management
     Response getAllAnnouncements(Integer page, Integer size, String recipientType, String title, Long adminId);
     Response getAnnouncementsByAdmin(Long adminId, int page, int size);

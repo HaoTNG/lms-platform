@@ -1,0 +1,268 @@
+{
+  "info": {
+    "name": "LMS Tutor API Tests",
+    "description": "Complete test collection for all Tutor endpoints",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Course Management",
+      "item": [
+        {
+          "name": "Get Course By ID",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "http://localhost:8080/api/tutors/courses/2",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8080",
+              "path": ["api", "tutors", "courses", "2"]
+            }
+          },
+          "response": {
+            "example": {
+              "statusCode": 200,
+              "message": "Course retrieved successfully",
+              "data": {
+                "courseId": 2,
+                "title": "Advanced Java Programming",
+                "description": "Learn Java from basics to advanced",
+                "syllabus": "Core concepts, OOP, Collections...",
+                "level": "Intermediate",
+                "maxStudents": 30,
+                "currentEnrollment": 25,
+                "courseStatus": "ACTIVE",
+                "subjectRegistrationId": 1,
+                "tutorId": 7,
+                "tutorName": "Java Tutor",
+                "startDate": "2025-01-01",
+                "endDate": "2025-06-30"
+              }
+            }
+          }
+        },
+        {
+          "name": "Update Course",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Advanced Java Programming - Updated\",\n  \"description\": \"Updated course description\",\n  \"syllabus\": \"Updated syllabus content\",\n  \"level\": \"Advanced\",\n  \"maxStudents\": 35\n}"
+            },
+            "url": {
+              "raw": "http://localhost:8080/api/tutors/courses/2",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8080",
+              "path": ["api", "tutors", "courses", "2"]
+            }
+          },
+          "response": {
+            "example": {
+              "statusCode": 200,
+              "message": "Course updated successfully",
+              "data": {
+                "courseId": 2,
+                "title": "Advanced Java Programming - Updated",
+                "description": "Updated course description"
+              }
+            }
+          }
+        },
+        {
+          "name": "Delete Course",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:8080/api/tutors/courses/2",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8080",
+              "path": ["api", "tutors", "courses", "2"]
+            }
+          },
+          "response": {
+            "example": {
+              "statusCode": 200,
+              "message": "Course deleted successfully"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Mentee & Exercise Management",
+      "item": [
+        {
+          "name": "Get All Mentees In Course",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:8080/api/tutors/courses/2/mentees?page=0&size=10",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8080",
+              "path": ["api", "tutors", "courses", "2", "mentees"],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "0"
+                },
+                {
+                  "key": "size",
+                  "value": "10"
+                }
+              ]
+            }
+          },
+          "response": {
+            "example": {
+              "statusCode": 200,
+              "message": "Mentees retrieved successfully",
+              "pagination": {
+                "content": [
+                  {
+                    "enrollmentId": 1,
+                    "menteeId": 2,
+                    "menteeName": "Nguyen Van A",
+                    "menteeEmail": "a.nguyen@example.com",
+                    "courseId": 2,
+                    "enrollmentDate": "2025-01-15",
+                    "grade": 8.5,
+                    "status": "ACTIVE"
+                  },
+                  {
+                    "enrollmentId": 2,
+                    "menteeId": 3,
+                    "menteeName": "Tran Thi B",
+                    "menteeEmail": "b.tran@example.com",
+                    "courseId": 2,
+                    "enrollmentDate": "2025-01-16",
+                    "grade": 9.0,
+                    "status": "ACTIVE"
+                  }
+                ],
+                "totalElements": 2,
+                "totalPages": 1,
+                "currentPage": 0,
+                "pageSize": 10
+              }
+            }
+          }
+        },
+        {
+          "name": "Create Exercise",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Exercise 1: Java Basics\",\n  \"description\": \"Write a Java program to calculate factorial\",\n  \"courseId\": 2,\n  \"dueDate\": \"2025-02-15\",\n  \"maxScore\": 100\n}"
+            },
+            "url": {
+              "raw": "http://localhost:8080/api/tutors/exercises",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8080",
+              "path": ["api", "tutors", "exercises"]
+            }
+          },
+          "response": {
+            "example": {
+              "statusCode": 201,
+              "message": "Exercise created successfully",
+              "data": {
+                "exerciseId": 5,
+                "title": "Exercise 1: Java Basics",
+                "description": "Write a Java program to calculate factorial",
+                "courseId": 2,
+                "dueDate": "2025-02-15",
+                "maxScore": 100,
+                "createdAt": "2025-11-30T10:00:00"
+              }
+            }
+          }
+        },
+        {
+          "name": "Delete Exercise",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:8080/api/tutors/exercises/5",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8080",
+              "path": ["api", "tutors", "exercises", "5"]
+            }
+          },
+          "response": {
+            "example": {
+              "statusCode": 200,
+              "message": "Exercise deleted successfully"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Submission Management",
+      "item": [
+        {
+          "name": "Get All Submissions",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:8080/api/tutors/exercises/5/submissions?page=0&size=10",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8080",
+              "path": ["api", "tutors", "exercises", "5", "submissions"],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "0"
+                },
+                {
+                  "key": "size",
+                  "value": "10"
+                }
+              ]
+            }
+          },
+          "response": {
+            "example": {
+              "statusCode": 200,
+              "message": "Submissions retrieved successfully",
+              "pagination": {
+                "content": [
+                  {
+                    "submissionId": 1,
+                    "exerciseId": 5,
+                    "menteeId": 2,
+                    "menteeName": "Nguyen Van A",
+                    "submissionDate": "2025-02-14",
+                    "content": "public class Factorial { ... }",
+                    "grade": 8.5,
+                    "feedback": "Good implementation\",\n                    \"status\": \"GRADED\"\n                  },\n                  {\n                    \"submissionId\": 2,\n                    \"exerciseId\": 5,\n                    \"menteeId\": 3,\n                    \"menteeName\": \"Tran Thi B\",\n                    \"submissionDate\": \"2025-02-13\",\n                    \"content\": \"public class Factorial { ... }\",\n                    \"grade\": 9.0,\n                    \"feedback\": \"Excellent code\",\n                    \"status\": \"GRADED\"\n                  }\n                ],\n                \"totalElements\": 2,\n                \"totalPages\": 1,\n                \"currentPage\": 0,\n                \"pageSize\": 10\n              }\n            }\n          }\n        },\n        {\n          \"name\": \"Grade Submission\",\n          \"request\": {\n            \"method\": \"PUT\",\n            \"header\": [],\n            \"url\": {\n              \"raw\": \"http://localhost:8080/api/tutors/submissions/1/grade?grade=8.5\",\n              \"protocol\": \"http\",\n              \"host\": [\"localhost\"],\n              \"port\": \"8080\",\n              \"path\": [\"api\", \"tutors\", \"submissions\", \"1\", \"grade\"],\n              \"query\": [\n                {\n                  \"key\": \"grade\",\n                  \"value\": \"8.5\"\n                }\n              ]\n            }\n          },\n          \"response\": {\n            \"example\": {\n              \"statusCode\": 200,\n              \"message\": \"Submission graded successfully\",\n              \"data\": {\n                \"submissionId\": 1,\n                \"grade\": 8.5,\n                \"status\": \"GRADED\"\n              }\n            }\n          }\n        }\n      ]\n    },\n    {\n      \"name\": \"Rating Management\",\n      \"item\": [\n        {\n          \"name\": \"Get All Ratings\",\n          \"request\": {\n            \"method\": \"GET\",\n            \"header\": [],\n            \"url\": {\n              \"raw\": \"http://localhost:8080/api/tutors/sessions/1/ratings?page=0&size=10\",\n              \"protocol\": \"http\",\n              \"host\": [\"localhost\"],\n              \"port\": \"8080\",\n              \"path\": [\"api\", \"tutors\", \"sessions\", \"1\", \"ratings\"],\n              \"query\": [\n                {\n                  \"key\": \"page\",\n                  \"value\": \"0\"\n                },\n                {\n                  \"key\": \"size\",\n                  \"value\": \"10\"\n                }\n              ]\n            }\n          },\n          \"response\": {\n            \"example\": {\n              \"statusCode\": 200,\n              \"message\": \"Ratings retrieved successfully\",\n              \"pagination\": {\n                \"content\": [\n                  {\n                    \"ratingId\": 1,\n                    \"sessionId\": 1,\n                    \"menteeId\": 2,\n                    \"menteeName\": \"Nguyen Van A\",\n                    \"score\": 5,\n                    \"comment\": \"Excellent tutor!\",\n                    \"reply\": null,\n                    \"ratedAt\": \"2025-02-28\"\n                  },\n                  {\n                    \"ratingId\": 2,\n                    \"sessionId\": 1,\n                    \"menteeId\": 3,\n                    \"menteeName\": \"Tran Thi B\",\n                    \"score\": 4,\n                    \"comment\": \"Good teaching\",\n                    \"reply\": null,\n                    \"ratedAt\": \"2025-02-27\"\n                  }\n                ],\n                \"totalElements\": 2,\n                \"totalPages\": 1,\n                \"currentPage\": 0,\n                \"pageSize\": 10\n              }\n            }\n          }\n        },\n        {\n          \"name\": \"Reply To Rating\",\n          \"request\": {\n            \"method\": \"PUT\",\n            \"header\": [],\n            \"url\": {\n              \"raw\": \"http://localhost:8080/api/tutors/ratings/1/reply?reply=Thank you for your feedback!\",\n              \"protocol\": \"http\",\n              \"host\": [\"localhost\"],\n              \"port\": \"8080\",\n              \"path\": [\"api\", \"tutors\", \"ratings\", \"1\", \"reply\"],\n              \"query\": [\n                {\n                  \"key\": \"reply\",\n                  \"value\": \"Thank you for your feedback!\"\n                }\n              ]\n            }\n          },\n          \"response\": {\n            \"example\": {\n              \"statusCode\": 200,\n              \"message\": \"Reply added successfully\",\n              \"data\": {\n                \"ratingId\": 1,\n                \"reply\": \"Thank you for your feedback!\"\n              }\n            }\n          }\n        },\n        {\n          \"name\": \"Report Rating\",\n          \"request\": {\n            \"method\": \"POST\",\n            \"header\": [\n              {\n                \"key\": \"Content-Type\",\n                \"value\": \"application/json\"\n              }\n            ],\n            \"body\": {\n              \"mode\": \"raw\",\n              \"raw\": \"{\n  \\\"title\\\": \\\"Inappropriate Comment\\\",\n  \\\"description\\\": \\\"This rating contains inappropriate language\\\"\n}\"\n            },\n            \"url\": {\n              \"raw\": \"http://localhost:8080/api/tutors/ratings/2/report\",\n              \"protocol\": \"http\",\n              \"host\": [\"localhost\"],\n              \"port\": \"8080\",\n              \"path\": [\"api\", \"tutors\", \"ratings\", \"2\", \"report\"]\n            }\n          },\n          \"response\": {\n            \"example\": {\n              \"statusCode\": 201,\n              \"message\": \"Rating reported successfully\",\n              \"data\": {\n                \"reportId\": 1,\n                \"ratingId\": 2,\n                \"title\": \"Inappropriate Comment\",\n                \"status\": \"PENDING\"\n              }\n            }\n          }\n        }\n      ]\n    },\n    {\n      \"name\": \"Conversation & Message\",\n      \"item\": [\n        {\n          \"name\": \"Join Conversation\",\n          \"request\": {\n            \"method\": \"POST\",\n            \"header\": [],\n            \"url\": {\n              \"raw\": \"http://localhost:8080/api/tutors/conversations/join?menteeId=2&tutorId=7\",\n              \"protocol\": \"http\",\n              \"host\": [\"localhost\"],\n              \"port\": \"8080\",\n              \"path\": [\"api\", \"tutors\", \"conversations\", \"join\"],\n              \"query\": [\n                {\n                  \"key\": \"menteeId\",\n                  \"value\": \"2\"\n                },\n                {\n                  \"key\": \"tutorId\",\n                  \"value\": \"7\"\n                }\n              ]\n            }\n          },\n          \"response\": {\n            \"example\": {\n              \"statusCode\": 200,\n              \"message\": \"Joined conversation successfully\",\n              \"data\": {\n                \"conversationId\": 1,\n                \"menteeId\": 2,\n                \"tutorId\": 7,\n                \"createdAt\": \"2025-11-30T10:00:00\"\n              }\n            }\n          }\n        },\n        {\n          \"name\": \"Send Message\",\n          \"request\": {\n            \"method\": \"POST\",\n            \"header\": [\n              {\n                \"key\": \"Content-Type\",\n                \"value\": \"application/json\"\n              }\n            ],\n            \"body\": {\n              \"mode\": \"raw\",\n              \"raw\": \"{\n  \\\"senderId\\\": 7,\n  \\\"content\\\": \\\"Hi, do you have any questions about the exercise?\\\"\n}\"\n            },\n            \"url\": {\n              \"raw\": \"http://localhost:8080/api/tutors/conversations/1/messages\",\n              \"protocol\": \"http\",\n              \"host\": [\"localhost\"],\n              \"port\": \"8080\",\n              \"path\": [\"api\", \"tutors\", \"conversations\", \"1\", \"messages\"]\n            }\n          },\n          \"response\": {\n            \"example\": {\n              \"statusCode\": 201,\n              \"message\": \"Message sent successfully\",\n              \"data\": {\n                \"messageId\": 1,\n                \"conversationId\": 1,\n                \"senderId\": 7,\n                \"senderName\": \"Java Tutor\",\n                \"content\": \"Hi, do you have any questions about the exercise?\",\n                \"sentAt\": \"2025-11-30T10:15:00\"\n              }\n            }\n          }\n        }\n      ]\n    },\n    {\n      \"name\": \"Announcement Management\",\n      \"item\": [\n        {\n          \"name\": \"Get All Announcements\",\n          \"request\": {\n            \"method\": \"GET\",\n            \"header\": [],\n            \"url\": {\n              \"raw\": \"http://localhost:8080/api/tutors/announcements?page=0&size=10&recipientType=TUTORS&title=Course\",\n              \"protocol\": \"http\",\n              \"host\": [\"localhost\"],\n              \"port\": \"8080\",\n              \"path\": [\"api\", \"tutors\", \"announcements\"],\n              \"query\": [\n                {\n                  \"key\": \"page\",\n                  \"value\": \"0\"\n                },\n                {\n                  \"key\": \"size\",\n                  \"value\": \"10\"\n                },\n                {\n                  \"key\": \"recipientType\",\n                  \"value\": \"TUTORS\"\n                },\n                {\n                  \"key\": \"title\",\n                  \"value\": \"Course\"\n                }\n              ]\n            }\n          },\n          \"response\": {\n            \"example\": {\n              \"statusCode\": 200,\n              \"message\": \"Announcements retrieved successfully\",\n              \"pagination\": {\n                \"content\": [\n                  {\n                    \"announcementId\": 1,\n                    \"title\": \"Course Schedule Update\",\n                    \"content\": \"The course schedule has been updated. Please check the new timetable.\",\n                    \"recipientType\": \"TUTORS\",\n                    \"adminId\": 1,\n                    \"adminName\": \"Admin User\",\n                    \"createdAt\": \"2025-11-20T08:00:00\",\n                    \"isRead\": true\n                  },\n                  {\n                    \"announcementId\": 2,\n                    \"title\": \"System Maintenance\",\n                    \"content\": \"System maintenance scheduled for next Saturday.\",\n                    \"recipientType\": \"TUTORS\",\n                    \"adminId\": 1,\n                    \"adminName\": \"Admin User\",\n                    \"createdAt\": \"2025-11-25T08:00:00\",\n                    \"isRead\": false\n                  }\n                ],\n                \"totalElements\": 2,\n                \"totalPages\": 1,\n                \"currentPage\": 0,\n                \"pageSize\": 10\n              }\n            }\n          }\n        },\n        {\n          \"name\": \"Get Announcements By Admin\",\n          \"request\": {\n            \"method\": \"GET\",\n            \"header\": [],\n            \"url\": {\n              \"raw\": \"http://localhost:8080/api/tutors/announcements/admin/1?page=0&size=10\",\n              \"protocol\": \"http\",\n              \"host\": [\"localhost\"],\n              \"port\": \"8080\",\n              \"path\": [\"api\", \"tutors\", \"announcements\", \"admin\", \"1\"],\n              \"query\": [\n                {\n                  \"key\": \"page\",\n                  \"value\": \"0\"\n                },\n                {\n                  \"key\": \"size\",\n                  \"value\": \"10\"\n                }\n              ]\n            }\n          },\n          \"response\": {\n            \"example\": {\n              \"statusCode\": 200,\n              \"message\": \"Announcements retrieved successfully\"\n            }\n          }\n        },\n        {\n          \"name\": \"Delete Announcement\",\n          \"request\": {\n            \"method\": \"DELETE\",\n            \"header\": [],\n            \"url\": {\n              \"raw\": \"http://localhost:8080/api/tutors/announcements/1\",\n              \"protocol\": \"http\",\n              \"host\": [\"localhost\"],\n              \"port\": \"8080\",\n              \"path\": [\"api\", \"tutors\", \"announcements\", \"1\"]\n            }\n          },\n          \"response\": {\n            \"example\": {\n              \"statusCode\": 200,\n              \"message\": \"Announcement deleted successfully\"\n            }\n          }\n        }\n      ]\n    }\n  ]\n}

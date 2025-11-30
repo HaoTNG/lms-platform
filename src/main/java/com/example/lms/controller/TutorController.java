@@ -1,8 +1,9 @@
 package com.example.lms.controller;
 
+import com.example.lms.dto.ExerciseDTO;
 import com.example.lms.model.Course;
-import com.example.lms.model.Exercise;
 import com.example.lms.service.interf.TutorService;
+import com.example.lms.dto.LessonDTO;
 import com.example.lms.dto.Response;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -48,8 +49,8 @@ public class TutorController {
     }
 
     @PostMapping("/exercises")
-    public ResponseEntity<Response> createExercise(@RequestBody Exercise exercise){
-        Response response = tutorService.createExercise(exercise);
+    public ResponseEntity<Response> createExercise(@RequestBody ExerciseDTO dto){
+        Response response = tutorService.createExercise(dto);
         return ResponseEntity.status(response.getStatusCode()).body(response);
     }
 
@@ -90,6 +91,7 @@ public class TutorController {
         return ResponseEntity.status(response.getStatusCode()).body(response);
     }
 
+
     @PutMapping("/ratings/{ratingId}/reply")
     public ResponseEntity<Response> replyToRating(@PathVariable Long ratingId,
                                                   @RequestParam String reply) {
@@ -127,6 +129,30 @@ public class TutorController {
         return ResponseEntity.status(response.getStatusCode()).body(response);
     }
 
+    @GetMapping("/lessons/courses/{id}")
+    public ResponseEntity<Response> getLessonById(@PathVariable Long id) {
+        Response response = tutorService.getAllLessonByCourseId(id);
+        return ResponseEntity.status(response.getStatusCode()).body(response);
+    }
+    @GetMapping("/lessons/courses/{courseId}/lessons/{lessonId}")
+    public ResponseEntity<Response> getLessonByIdAndCourseId(
+            @PathVariable Long courseId,
+            @PathVariable Long lessonId
+    ) {
+        Response res = tutorService.getLessonByLessonIdAndCourseId(lessonId, courseId);
+        return ResponseEntity.status(res.getStatusCode()).body(res);
+    }
+    @PostMapping("/lessons")
+    public ResponseEntity<Response> create(@RequestBody LessonDTO req) {
+        Response response = tutorService.createLesson(req);
+        return ResponseEntity.status(response.getStatusCode()).body(response);
+    }
+
+    @PutMapping("/lessons/{id}")
+    public ResponseEntity<Response> update(@PathVariable Long id, @RequestBody LessonDTO req) {
+        Response response = tutorService.updateLesson(id, req);
+        return ResponseEntity.status(response.getStatusCode()).body(response);
+    }
     // ==================== ANNOUNCEMENT MANAGEMENT ====================
 
     @GetMapping("/announcements")
