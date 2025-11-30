@@ -1,4 +1,5 @@
 com/example/lms/model/Announcement$AnnouncementBuilder.class
+com/example/lms/dto/CourseDTO$CourseDTOBuilder.class
 com/example/lms/dto/Response.class
 com/example/lms/model/Question.class
 com/example/lms/enums/ResourceType.class
@@ -79,16 +80,20 @@ com/example/lms/model/Enrollment.class
 com/example/lms/repository/SessionRepository.class
 com/example/lms/service/imple/MenteeServiceImple.class
 com/example/lms/enums/RecipientType.class
+com/example/lms/mapper/ReportTicketMapperImpl.class
 com/example/lms/repository/QuestionRepository.class
 com/example/lms/repository/ReportTicketRepository.class
 com/example/lms/dto/AdminAnalyticsDTO$SubmissionAnalysisDTO.class
+com/example/lms/enums/UserRole.class
 com/example/lms/model/Conversation.class
+com/example/lms/mapper/CourseMapper.class
 com/example/lms/dto/AnnouncementDTO$AnnouncementDTOBuilder.class
 com/example/lms/dto/AdminAnalyticsDTO$TutorAnalyticsDTO.class
 com/example/lms/model/Resource.class
 com/example/lms/dto/TutorDTO.class
 com/example/lms/mapper/UserMapper.class
 com/example/lms/dto/AdminAnalyticsDTO$StudentAnalyticsDTO.class
+com/example/lms/repository/EnrollmentRepository.class
 com/example/lms/mapper/AnnouncementMapper.class
 com/example/lms/controller/AuthController.class
 com/example/lms/config/SecurityConfig.class
@@ -100,6 +105,7 @@ com/example/lms/dto/ReportTicketDTO.class
 com/example/lms/model/Question$QuestionBuilder.class
 com/example/lms/controller/MenteeController.class
 com/example/lms/model/Mentee.class
+com/example/lms/mapper/ReportTicketMapper.class
 com/example/lms/repository/ResourceRepository.class
 com/example/lms/service/imple/AdminAnalyticsServiceImpl.class
 com/example/lms/security/JwtUserDetails.class
