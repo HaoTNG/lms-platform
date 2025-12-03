@@ -3,6 +3,7 @@ package com.example.lms.service.imple;
 import com.example.lms.dto.*;
 import com.example.lms.enums.CourseStatus;
 import com.example.lms.enums.RecipientType;
+import com.example.lms.enums.RegistrationStatus;
 import com.example.lms.enums.ReportTicketStatus;
 import com.example.lms.mapper.ReportTicketMapper;
 import com.example.lms.model.*;
@@ -209,6 +210,7 @@ public class AdminServiceImple implements AdminService {
                     : CourseStatus.OPEN;
             
             var courseName = subjectRegistration.getSubject().getSubjectName();
+            subjectRegistration.setRegistrationStatus(RegistrationStatus.APPROVED);
             // Map DTO -> Entity
             Course course = Course.builder()
                     .courseName(courseName)
@@ -222,6 +224,8 @@ public class AdminServiceImple implements AdminService {
                     .build();
 
             courseRepository.save(course);
+            subjectRegistrationRepository.save(subjectRegistration);
+
 
             response.setStatusCode(201);
             response.setMessage("Course created successfully");
@@ -234,6 +238,103 @@ public class AdminServiceImple implements AdminService {
             response.setMessage("Failed to create course: " + e.getMessage());
         }
         return response;
+    }
+
+    @Override
+    public Response getCourseById(Long courseId) {
+        Response response = new Response();
+        try {
+            Course course = courseRepository.findById(courseId)
+                    .orElse(null);
+
+            if (course == null) {
+                response.setStatusCode(404);
+                response.setMessage("Course not found with ID: " + courseId);
+                return response;
+            }
+
+            CourseDTO dto = courseMapper.toDTO(course);
+
+            response.setStatusCode(200);
+            response.setMessage("Course retrieved successfully");
+            response.setData(dto);
+            return response;
+
+        } catch (Exception e) {
+            response.setStatusCode(400);
+            response.setMessage("Failed to retrieve course: " + e.getMessage());
+            return response;
+        }
+    }
+    @Override
+    public Response updateCourse(Long courseId, CourseDTO dto) {
+        Response response = new Response();
+        try {
+            Course course = courseRepository.findById(courseId)
+                    .orElse(null);
+
+            if (course == null) {
+                response.setStatusCode(404);
+                response.setMessage("Course not found with ID: " + courseId);
+                return response;
+            }
+
+            // Nếu sửa subjectRegistrationId
+            if (dto.getSubjectRegistrationId() != null) {
+                SubjectRegistration reg = subjectRegistrationRepository
+                        .findById(dto.getSubjectRegistrationId())
+                        .orElse(null);
+
+                if (reg == null) {
+                    response.setStatusCode(400);
+                    response.setMessage("SubjectRegistration not found with ID: "
+                            + dto.getSubjectRegistrationId());
+                    return response;
+                }
+
+                course.setSubjectRegistration(reg);
+
+                // CourseName = subjectName theo logic bạn
+                course.setCourseName(reg.getSubject().getSubjectName());
+            }
+
+            // Update các field còn lại
+            if (dto.getDescription() != null)
+                course.setDescription(dto.getDescription());
+
+            if (dto.getMaxMentee() != null)
+                course.setMaxMentee(dto.getMaxMentee());
+
+            if (dto.getStartDate() != null)
+                course.setStartDate(dto.getStartDate());
+
+            if (dto.getEndDate() != null)
+                course.setEndDate(dto.getEndDate());
+
+            if (dto.getCourseStatus() != null) {
+                CourseStatus status = CourseStatus.fromValue(dto.getCourseStatus());
+                course.setCourseStatus(status);
+            }
+
+
+            courseRepository.save(course);
+
+            response.setStatusCode(200);
+            response.setMessage("Course updated successfully");
+            response.setData(courseMapper.toDTO(course));
+
+            return response;
+
+        } catch (IllegalArgumentException e) {
+            response.setStatusCode(400);
+            response.setMessage("Invalid course status: " + dto.getCourseStatus());
+            return response;
+
+        } catch (Exception e) {
+            response.setStatusCode(400);
+            response.setMessage("Failed to update course: " + e.getMessage());
+            return response;
+        }
     }
 
 

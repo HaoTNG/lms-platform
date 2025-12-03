@@ -2,12 +2,19 @@ package com.example.lms.model;
 
 import com.example.lms.enums.ReportTicketStatus;
 import jakarta.persistence.*;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
+import lombok.NoArgsConstructor;
+
 import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "report_tickets")
 @Data
+@Builder
+@AllArgsConstructor
+@NoArgsConstructor
 public class ReportTicket {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

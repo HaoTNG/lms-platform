@@ -9,7 +9,7 @@ import org.springframework.stereotype.Component;
 
 @Generated(
     value = "org.mapstruct.ap.MappingProcessor",
-    comments = "version: 1.5.5.Final, compiler: Eclipse JDT (IDE) 3.44.0.v20251118-1623, environment: Java 21.0.9 (Eclipse Adoptium)"
+    comments = "version: 1.5.5.Final, compiler: javac, environment: Java 21.0.9 (Arch Linux)"
 )
 @Component
 public class ReportTicketMapperImpl implements ReportTicketMapper {
@@ -42,20 +42,20 @@ public class ReportTicketMapperImpl implements ReportTicketMapper {
             return null;
         }
 
-        ReportTicket reportTicket = new ReportTicket();
+        ReportTicket.ReportTicketBuilder reportTicket = ReportTicket.builder();
 
-        reportTicket.setMentee( reportTicketDTOToMentee( dto ) );
+        reportTicket.mentee( reportTicketDTOToMentee( dto ) );
         if ( dto.getStatus() != null ) {
-            reportTicket.setStatus( Enum.valueOf( ReportTicketStatus.class, dto.getStatus() ) );
+            reportTicket.status( Enum.valueOf( ReportTicketStatus.class, dto.getStatus() ) );
         }
-        reportTicket.setId( dto.getId() );
-        reportTicket.setTitle( dto.getTitle() );
-        reportTicket.setDescription( dto.getDescription() );
-        reportTicket.setAdminResponse( dto.getAdminResponse() );
-        reportTicket.setCreatedAt( dto.getCreatedAt() );
-        reportTicket.setResolvedAt( dto.getResolvedAt() );
+        reportTicket.id( dto.getId() );
+        reportTicket.title( dto.getTitle() );
+        reportTicket.description( dto.getDescription() );
+        reportTicket.adminResponse( dto.getAdminResponse() );
+        reportTicket.createdAt( dto.getCreatedAt() );
+        reportTicket.resolvedAt( dto.getResolvedAt() );
 
-        return reportTicket;
+        return reportTicket.build();
     }
 
     private Long reportTicketMenteeId(ReportTicket reportTicket) {

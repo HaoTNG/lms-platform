@@ -1,7 +1,57 @@
 package com.example.lms.service.interf;
 
+import com.example.lms.dto.*;
+import com.example.lms.model.*;
 
-
+import java.util.List;
 
 public interface MenteeService {
+
+    // ===== PROFILE =====
+    Mentee getMyProfile(Long menteeId);
+
+    // ===== COURSE / ENROLLMENT =====
+    List<Course> getMyCourses(Long menteeId);
+    Course getMyCourseDetail(Long menteeId, Long courseId);
+
+    Enrollment enrollCourse(Long menteeId, Long courseId);
+
+    // ===== LESSON / RESOURCE / EXERCISE =====
+    List<Lesson> getLessonsByCourse(Long courseId);
+
+    List<Resource> getResourcesByLesson(Long lessonId);
+
+    List<Exercise> getExercisesByLesson(Long lessonId);
+
+    // ===== SUBMISSION =====
+    Submission submitExercise(Long menteeId, Long exerciseId, Submission submission);
+
+    List<Submission> getMySubmissions(Long menteeId);
+
+    // ===== SESSION / ATTEND / JOIN CLASS =====
+    List<Session> getSessionsByCourse(Long courseId);
+
+    List<Session> getMyUpcomingSessions(Long menteeId);
+
+    // ===== RATING =====
+    Rating rateSession(Long menteeId, Long sessionId, Integer score, String comment);
+
+    List<Rating> getMyRatings(Long menteeId);
+
+    // ===== QUESTION / FORUM =====
+    Question askQuestion(Long menteeId, Long lessonId, String content);
+
+    List<Question> getMyQuestions(Long menteeId);
+
+    // ===== REPORT TICKET =====
+    ReportTicket createReport(Long menteeId, String title, String content);
+
+    List<ReportTicket> getMyReports(Long menteeId);
+
+    // ===== MESSAGING =====
+    Conversation openConversation(Long menteeId, Long tutorId);
+
+    List<Conversation> getMyConversations(Long menteeId);
+    List<Message> getMessages(Long conversationId);
+    Message sendMessage(Long conversationId, Long senderId, Long receiverId, String content);
 }

@@ -79,12 +79,7 @@ public class TutorController {
         return ResponseEntity.status(response.getStatusCode()).body(response);
     }
 
-    @PutMapping("/submissions/{submissionId}/grade")
-    public ResponseEntity<Response> gradeSubmission(@PathVariable Long submissionId,
-                                                    @RequestParam Double grade) {
-        Response response = tutorService.gradeSubmission(submissionId, grade);
-        return ResponseEntity.status(response.getStatusCode()).body(response);
-    }
+
 
     // ==================== RATING MANAGEMENT ====================
 

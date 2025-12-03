@@ -24,4 +24,6 @@ public class CourseDTO {
     private Long subjectRegistrationId;  // Only ID, not full object
     private String tutorName;             // Tutor info as simple fields
     private Long tutorId;
+    private int totalLessons;
+    private int totalSessions;
 }

@@ -76,6 +76,20 @@ public class AdminController {
         return ResponseEntity.status(response.getStatusCode()).body(response);
     }
 
+    @GetMapping("/courses/{courseId}")
+    public ResponseEntity<Response> getCourseById(@PathVariable("courseId") Long courseId) {
+        Response response = adminService.getCourseById(courseId);
+        return ResponseEntity.status(response.getStatusCode()).body(response);
+    }
+
+    @PutMapping("/courses/{courseId}")
+    public ResponseEntity<Response> updateCourse(
+            @PathVariable("courseId") Long courseId,
+            @RequestBody CourseDTO courseDTO) {
+        Response response = adminService.updateCourse(courseId,courseDTO);
+        return ResponseEntity.status(response.getStatusCode()).body(response);
+    }
+
     // ==================== REPORT TICKET MANAGEMENT ====================
     @PostMapping("/report-tickets")
     public ResponseEntity<Response> createReportTicket(@RequestBody ReportTicket reportTicket) {

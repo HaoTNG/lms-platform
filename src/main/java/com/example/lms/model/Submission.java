@@ -1,5 +1,6 @@
 package com.example.lms.model;
 
+import com.fasterxml.jackson.annotation.JsonBackReference;
 import jakarta.persistence.*;
 import lombok.*;
 import java.time.LocalDateTime;
@@ -25,6 +26,7 @@ public class Submission {
 
     @ManyToOne
     @JoinColumn(name = "exercise_id", nullable = false)
+    @JsonBackReference
     private Exercise exercise;
 
     @Column(columnDefinition = "TEXT")

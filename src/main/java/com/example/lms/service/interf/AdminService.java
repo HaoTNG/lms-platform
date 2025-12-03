@@ -17,7 +17,8 @@ public interface AdminService {
     //course management
     Response getAllCourses(Integer page, Integer size, String tutor, String status, String course_name);
     Response createCourse(CourseDTO courseDTO);
-
+    Response updateCourse(Long courseId, CourseDTO dto);
+    Response getCourseById(Long courseId);
     // Report Ticket Management
     Response createReportTicket(ReportTicket reportTicket);
     Response deleteReportTicket(Long ticketId);
