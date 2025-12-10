@@ -1,6 +1,7 @@
 package com.example.lms.model;
 
 import com.example.lms.enums.RegistrationStatus;
+import com.fasterxml.jackson.annotation.JsonBackReference;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -34,6 +35,7 @@ public class SubjectRegistration {
     private Subject subject;
 
     @OneToOne(mappedBy = "subjectRegistration", cascade = CascadeType.ALL)
+    @JsonBackReference
     private Course course;
 
     @Enumerated(EnumType.STRING)

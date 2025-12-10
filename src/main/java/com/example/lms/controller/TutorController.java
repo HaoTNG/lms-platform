@@ -1,16 +1,25 @@
 package com.example.lms.controller;
 
-import com.example.lms.dto.ExerciseDTO;
-import com.example.lms.model.Course;
+import com.example.lms.dto.*;
+import com.example.lms.enums.ResourceType;
+import com.example.lms.mapper.ExerciseMapper;
+import com.example.lms.mapper.ResourceMapper;
+import com.example.lms.mapper.SessionMapper;
+import com.example.lms.model.*;
+import com.example.lms.repository.ExerciseRepository;
+import com.example.lms.repository.LessonRepository;
+import com.example.lms.repository.ResourceRepository;
+import com.example.lms.service.interf.AdminService;
+import com.example.lms.service.interf.MenteeService;
 import com.example.lms.service.interf.TutorService;
-import com.example.lms.dto.LessonDTO;
-import com.example.lms.dto.Response;
-import com.example.lms.dto.SubjectRegistrationRequest;
 
+import com.example.lms.service.interf.UserService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 
 @RestController
@@ -18,6 +27,14 @@ import java.util.Map;
 @RequiredArgsConstructor
 public class TutorController {
     private final TutorService tutorService;
+    private final MenteeService menteeService;
+    private final SessionMapper sessionMapper;
+    private final UserService userService;
+    private final ResourceMapper resourceMapper;
+    private final LessonRepository lessonRepository;
+    private final ResourceRepository resourceRepository;
+    private final ExerciseRepository exerciseRepository;
+    private final ExerciseMapper exerciseMapper;
     // ==================== COURSE MANAGEMENT ====================
 
     @GetMapping("/courses/{courseId}")
@@ -45,6 +62,7 @@ public class TutorController {
         Response response = tutorService.getMyCourse();
         return ResponseEntity.status(response.getStatusCode()).body(response);
     }
+
     @GetMapping("/courses/{courseId}/mentees")
     public ResponseEntity<Response> getAllMenteesInCourse(
             @PathVariable Long courseId,
@@ -56,10 +74,77 @@ public class TutorController {
     }
 
     @PostMapping("/exercises")
-    public ResponseEntity<Response> createExercise(@RequestBody ExerciseDTO dto){
+    public ResponseEntity<Response> createExercise(@RequestBody ExerciseDTO dto){ // dto này sẽ phải parse cái lesson id vào trong nhé
         Response response = tutorService.createExercise(dto);
         return ResponseEntity.status(response.getStatusCode()).body(response);
     }
+
+
+    @GetMapping("/exercises")
+    public ResponseEntity<Response> getExercises(){
+        Response response = tutorService.getExercise();
+        return ResponseEntity.status(response.getStatusCode()).body(response);
+    }
+    @GetMapping("/exercises/{exerciseId}")
+    public ResponseEntity<ExerciseDTO> getExercise(@PathVariable Long exerciseId) {
+        Exercise exercise = exerciseRepository.findById(exerciseId).orElseThrow(() -> new RuntimeException("Exercise not found"));
+        var exerciseDTO = exerciseMapper.toExerciseDTO(exercise);
+        return ResponseEntity.ok(exerciseDTO);
+    }
+    // =============================
+    // LẤY EXERCISES TRONG BÀI GIẢNG
+    // =============================
+    @GetMapping("/lesson/{lessonId}/exercises")
+    public ResponseEntity<List<ExerciseDTO>> getExercises(@PathVariable Long lessonId) {
+        List<Exercise> exercises = menteeService.getExercisesByLesson(lessonId);
+        List<ExerciseDTO> dtoList = new ArrayList<>();
+        for (Exercise exercise : exercises) {
+            dtoList.add(exerciseMapper.toExerciseDTO(exercise));
+        }
+        return ResponseEntity.ok(dtoList);
+    }
+    @GetMapping("/myexercises")
+    public ResponseEntity<Response> getExercisesByTutor() {
+        try {
+            Long tutorId = userService.getCurrentUserId();
+
+            // Raw data từ DB
+            List<Exercise> rawExercises = exerciseRepository.findAllByTutorIdNative(tutorId);
+
+            // Map sang DTO gọn
+            List<ExerciseDTO> dtoList = rawExercises.stream()
+                    .map(e -> ExerciseDTO.builder()
+                            .id(e.getId())
+                            .lessonId(e.getLesson().getId())
+                            .question(e.getQuestion())
+                            .deadline(e.getDeadline())
+                            .attemptLimit(e.getAttemptLimit())
+                            .submissionCount(
+                                    e.getSubmissions() == null ? 0 : e.getSubmissions().size()
+                            )
+                            .build())
+                    .toList();
+
+            return ResponseEntity.ok(
+                    Response.builder()
+                            .statusCode(200)
+                            .message("Successfully fetched exercises for tutor")
+                            .data(dtoList)
+                            .build()
+            );
+
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(
+                    Response.builder()
+                            .statusCode(400)
+                            .message("Failed to fetch exercises: " + e.getMessage())
+                            .build()
+            );
+        }
+    }
+
+
+
 
     @DeleteMapping("/exercises/{exerciseId}")
     public ResponseEntity<Response> deleteExercise(@PathVariable Long exerciseId) {
@@ -77,6 +162,49 @@ public class TutorController {
     ) {
         Response response = tutorService.getAllSubmissions(exerciseId, page, size);
         return ResponseEntity.status(response.getStatusCode()).body(response);
+    }
+
+    @PostMapping("/submission")
+    public ResponseEntity<Response> gradeSubmission(
+            @RequestBody GradeRequest grade
+    ) {
+        Response response = tutorService.gradeSubmission(grade.getId(), grade.getGrade());
+        return ResponseEntity.status(response.getStatusCode()).body(response);
+    }
+    @GetMapping("/myresources")
+    public ResponseEntity<Response> getResourcesByTutor() {
+        try {
+            Long tutorId = userService.getCurrentUserId();
+
+            List<Resource> rawResources = resourceRepository.findAllByTutorIdNative(tutorId);
+
+            List<ResourceDTO> dtoList = rawResources.stream()
+                    .map(r -> ResourceDTO.builder()
+                            .id(r.getId())
+                            .lessonId(r.getLesson().getId())
+                            .title(r.getTitle())
+                            .fileUrl(r.getFileUrl())
+                            .resourceType(r.getResourceType().name())
+                            .build()
+                    )
+                    .toList();
+
+            return ResponseEntity.ok(
+                    Response.builder()
+                            .statusCode(200)
+                            .message("Successfully fetched resources for tutor")
+                            .data(dtoList)
+                            .build()
+            );
+
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(
+                    Response.builder()
+                            .statusCode(400)
+                            .message("Failed to fetch resources: " + e.getMessage())
+                            .build()
+            );
+        }
     }
 
 
@@ -144,6 +272,45 @@ public class TutorController {
         Response response = tutorService.subjectRegistration(subjectId);
         return ResponseEntity.status(response.getStatusCode()).body(response);
     }
+
+    @GetMapping("/subjects")
+    public ResponseEntity<Response> getSubjects(){
+        Response response = tutorService.getSubjects();
+        return ResponseEntity.status(response.getStatusCode()).body(response);
+    }
+    @GetMapping("/course/{courseId}/sessions")
+    public ResponseEntity<List<SessionDTO>> getSessions(@PathVariable Long courseId) {
+        List<Session> sessions = menteeService.getSessionsByCourse(courseId);
+        List<SessionDTO> dtoList = new ArrayList<>();
+        for (Session session : sessions) {
+            dtoList.add(sessionMapper.toSessionDTO(session));
+        }
+        return ResponseEntity.ok(dtoList);
+    }
+
+    @PostMapping("/course/{courseId}/sessions")
+    public ResponseEntity<Response> createSession(
+            @PathVariable Long courseId,
+            @RequestBody SessionDTO session) {
+        Response response = tutorService.createSession(courseId, session);
+
+        return ResponseEntity.status(response.getStatusCode()).body(response);
+    }
+
+    @PutMapping("/course/{courseId}/sessions")
+    public ResponseEntity<Response> updateSession(
+            @PathVariable Long courseId,
+            @RequestBody SessionDTO session) {
+        Response response = tutorService.updateSession(courseId, session);
+
+        return ResponseEntity.status(response.getStatusCode()).body(response);
+    }
+
+    @GetMapping("/course/sessions/{sessionId}")
+    public ResponseEntity<SessionDTO> getSession(@PathVariable Long sessionId) {
+        SessionDTO session = menteeService.getSessionById(sessionId);
+        return ResponseEntity.status(200).body(session);
+    }
     // ==================== LESSON MANAGEMENT ====================
     @GetMapping("/lessons/courses/{id}")
     public ResponseEntity<Response> getLessonById(@PathVariable Long id) {
@@ -168,6 +335,153 @@ public class TutorController {
     public ResponseEntity<Response> update(@PathVariable Long id, @RequestBody LessonDTO req) {
         Response response = tutorService.updateLesson(id, req);
         return ResponseEntity.status(response.getStatusCode()).body(response);
+    }
+
+    @GetMapping("/lesson/{lessonId}/resources")
+    public ResponseEntity<List<ResourceDTO>> getResources(@PathVariable Long lessonId) {
+        List<Resource> resources = menteeService.getResourcesByLesson(lessonId);
+        List<ResourceDTO> dtoList = new ArrayList<>();
+        for (Resource resource : resources) {
+            dtoList.add(resourceMapper.toResourceDTO(resource));
+        }
+        return ResponseEntity.ok(dtoList);
+    }
+
+    @PostMapping("/resources")
+    public ResponseEntity<Response> createResource(@RequestBody ResourceDTO req) {
+        try {
+            Lesson lesson = lessonRepository.findById(req.getLessonId()).orElse(null);
+            if (lesson == null) {
+                return ResponseEntity.badRequest()
+                        .body(Response.builder().statusCode(400).message("Lesson not found").build());
+            }
+
+            Resource resource = Resource.builder()
+                    .lesson(lesson)
+                    .title(req.getTitle())
+                    .fileUrl(req.getFileUrl())
+                    .resourceType(ResourceType.fromValue(req.getResourceType()))
+                    .build();
+
+            resourceRepository.save(resource);
+
+            return ResponseEntity.ok(
+                    Response.builder().statusCode(200).message("Successfully created resource").data(resource).build()
+            );
+
+        } catch (Exception e) {
+            return ResponseEntity.badRequest()
+                    .body(Response.builder().statusCode(400)
+                            .message("Failed to create resource: " + e.getMessage()).build());
+        }
+    }
+
+    @PutMapping("/resources/{id}")
+    public ResponseEntity<Response> updateResource(@PathVariable Long id, @RequestBody ResourceDTO req) {
+        try {
+            Resource resource = resourceRepository.findById(id).orElse(null);
+            if (resource == null) {
+                return ResponseEntity.badRequest()
+                        .body(Response.builder().statusCode(400).message("Resource not found").build());
+            }
+
+            // Update lesson nếu FE gửi lessonId mới
+            if (req.getLessonId() != null) {
+                Lesson lesson = lessonRepository.findById(req.getLessonId()).orElse(null);
+                if (lesson == null) {
+                    return ResponseEntity.badRequest()
+                            .body(Response.builder().statusCode(400).message("Lesson not found").build());
+                }
+                resource.setLesson(lesson);
+            }
+
+            if (req.getTitle() != null) {
+                resource.setTitle(req.getTitle());
+            }
+
+            if (req.getFileUrl() != null) {
+                resource.setFileUrl(req.getFileUrl());
+            }
+
+            if (req.getResourceType() != null) {
+                resource.setResourceType(ResourceType.fromValue(req.getResourceType()));
+            }
+
+            resourceRepository.save(resource);
+
+            return ResponseEntity.ok(
+                    Response.builder()
+                            .statusCode(200)
+                            .message("Successfully updated resource")
+                            .data(resource)
+                            .build()
+            );
+
+        } catch (Exception e) {
+            return ResponseEntity.badRequest()
+                    .body(Response.builder()
+                            .statusCode(400)
+                            .message("Failed to update resource: " + e.getMessage())
+                            .build());
+        }
+    }
+
+    @DeleteMapping("/resources/{id}")
+    public ResponseEntity<Response> deleteResource(@PathVariable Long id) {
+        try {
+            Resource resource = resourceRepository.findById(id).orElse(null);
+
+            if (resource == null) {
+                return ResponseEntity.status(404).body(
+                        Response.builder()
+                                .statusCode(404)
+                                .message("Resource not found")
+                                .build()
+                );
+            }
+
+            resourceRepository.delete(resource);
+
+            return ResponseEntity.ok(
+                    Response.builder()
+                            .statusCode(200)
+                            .message("Successfully deleted resource")
+                            .build()
+            );
+
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(
+                    Response.builder()
+                            .statusCode(400)
+                            .message("Failed to delete resource: " + e.getMessage())
+                            .build()
+            );
+        }
+    }
+
+
+    @PostMapping("/forum/{sessionId}")
+    public ResponseEntity<?> createForum(
+            @PathVariable Long sessionId) {
+
+        Forum forum = menteeService.createForum(sessionId);
+
+        return ResponseEntity.ok(200);
+
+    }
+
+    @GetMapping("/forum/{forumId}/questions")
+    public ResponseEntity<List<QuestionDTO>> getQuestionsByForum(@PathVariable Long forumId) {
+        return ResponseEntity.ok(menteeService.getQuestionsByForum(forumId));
+    }
+
+    @PostMapping("forum/{questionId}/answer")
+    public ResponseEntity<Response> answerQuestion(
+            @PathVariable Long questionId,
+            @RequestBody String answer
+    ){
+       Response response = tutorService.answerQuestion(questionId,answer);
+       return ResponseEntity.status(response.getStatusCode()).body(response);
     }
     // ==================== ANNOUNCEMENT MANAGEMENT ====================
 

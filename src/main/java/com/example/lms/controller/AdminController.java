@@ -6,6 +6,7 @@ import com.example.lms.dto.*;
 import com.example.lms.model.*;
 import com.example.lms.service.interf.AdminService;
 import com.example.lms.service.interf.AdminAnalyticsService;
+import com.example.lms.service.interf.TutorService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -16,7 +17,6 @@ import org.springframework.web.bind.annotation.*;
 public class AdminController {
     private final AdminService adminService;
     private final AdminAnalyticsService adminAnalyticsService;
-
 
 
 
@@ -92,7 +92,7 @@ public class AdminController {
 
     // ==================== REPORT TICKET MANAGEMENT ====================
     @PostMapping("/report-tickets")
-    public ResponseEntity<Response> createReportTicket(@RequestBody ReportTicket reportTicket) {
+    public ResponseEntity<Response> createReportTicket(@RequestBody ReportTicketDTO reportTicket) {
         Response response = adminService.createReportTicket(reportTicket);
         return ResponseEntity.status(response.getStatusCode()).body(response);
     }
@@ -237,5 +237,27 @@ public class AdminController {
                 .data(analytics)
                 .build());
     }
+
+
+    @GetMapping("/subject-registrations")
+    public ResponseEntity<Response> getAllSubjectRegistrations() {
+        Response response = adminService.getAllsubjectRegistration();
+        return ResponseEntity.status(response.getStatusCode()).body(response);
+    }
+
+
+
+    @GetMapping("/courses/{courseId}/enrollments/stats")
+    public ResponseEntity<Response> getEnrollmentStats(@PathVariable Long courseId) {
+        var response = adminService.getEnrollmentStats(courseId);
+        return ResponseEntity.status(response.getStatusCode()).body(response);
+    }
+
+    @PostMapping("/courses/{courseId}/enrollments/approve")
+    public ResponseEntity<Response> approveEnrollments(@PathVariable Long courseId) {
+        var response=  adminService.approveByAvailableSlots(courseId);
+        return ResponseEntity.status(response.getStatusCode()).body(response);
+    }
+
 }
 

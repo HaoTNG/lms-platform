@@ -36,6 +36,8 @@ public class TutorServiceImple implements TutorService {
     private final LessonRepository lessonRepository;
     private final SubjectRegistrationRepository subjectRegistrationRepository;
     private final SubjectRepository subjectRepository;
+    private final SessionRepository sessionRepository;
+    private final QuestionRepository questionRepository;
     @Override
     public Response updateCourse(Long courseId, Course courseDTO) {
         Response response = new Response();
@@ -301,6 +303,16 @@ public class TutorServiceImple implements TutorService {
         }
         return response;
     }
+
+    @Override
+    public Response getSubjects(){
+        try{
+            var subjects =  subjectRepository.findAll();
+            return Response.builder().statusCode(200).data(subjects).build();
+        }catch(Exception e){
+            return Response.builder().statusCode(500).message("failed to fetch subjects").build();
+        }
+    }
     @Override
     public Response getAllSubjectRegistrationsByTutorId() {
         Response response = new Response();
@@ -372,6 +384,47 @@ public class TutorServiceImple implements TutorService {
                     .build();
         }
     }
+
+    @Override
+    public Response getExercise() {
+        try {
+            Long tutorId = getCurrentUserId();
+
+            List<SubjectRegistration> registrations = subjectRegistrationRepository.findByTutor_Id(tutorId);
+
+            List<Long> courseIds = registrations.stream()
+                    .map(r -> r.getCourse().getCourseId())
+                    .filter(Objects::nonNull)
+                    .toList();
+
+            List<Lesson> lessons = lessonRepository.findByCourse_CourseIdIn(courseIds);
+
+            List<ExerciseDTO> exercises = lessons.stream()
+                    .flatMap(l -> l.getExercises().stream())
+                    .map(e -> ExerciseDTO.builder()
+                            .id(e.getId())
+                            .lessonId(e.getLesson().getId())
+                            .question(e.getQuestion())
+                            .deadline(e.getDeadline())
+                            .attemptLimit(e.getAttemptLimit())
+                            .build()
+                    )
+                    .toList();
+
+            return Response.builder()
+                    .statusCode(200)
+                    .message("Exercises retrieved successfully")
+                    .data(exercises)
+                    .build();
+
+        } catch (Exception e) {
+            return Response.builder()
+                    .statusCode(400)
+                    .message("Failed to retrieve exercises: " + e.getMessage())
+                    .build();
+        }
+    }
+
 
     @Override
     public Response deleteExercise(Long exerciseId) {
@@ -520,6 +573,19 @@ public class TutorServiceImple implements TutorService {
                     .build();
         }
     }
+    @Override
+    public Response answerQuestion(Long questionId, String answer){
+
+       try{
+           var question = questionRepository.findById(questionId)
+                   .orElseThrow(() -> new RuntimeException("Mentee not found"));
+           question.setAnswer(answer);
+           questionRepository.save(question);
+           return Response.builder().statusCode(200).message("Answer retrieved successfully").build();
+       }catch (Exception e){
+           return Response.builder().statusCode(400).message("Failed to retrieve question: " + e.getMessage()).build();
+       }
+    };
 
     public Response createLesson(LessonDTO req) {
         try{
@@ -571,6 +637,64 @@ public class TutorServiceImple implements TutorService {
             return Response.builder().statusCode(400).message("Failed to create lesson: " + e.getMessage()).build();
         }
     }
+
+    @Override
+    public Response createSession(Long id, SessionDTO session) {
+        try{
+            var save = Session.builder()
+                    .endTime(session.getEndTime())
+                    .startTime(session.getStartTime())
+                    .room(session.getRoom())
+                    .type(session.getType())
+                    .date(session.getDate())
+                    .course(courseRepository.getCourseByCourseId(id))
+                    .build();
+            sessionRepository.save(save);
+
+            return Response.builder().statusCode(200).message("successfully created session").build();
+        }catch (Exception e){
+            return Response.builder().statusCode(400).message("Failed to create session: " + e.getMessage()).build();
+        }
+    }
+
+    @Override
+    public Response updateSession(Long id, SessionDTO sessionDto) {
+        try {
+            // 1. Tìm session cũ
+            Session existing = sessionRepository.findById(id)
+                    .orElseThrow(() -> new RuntimeException("Session not found"));
+
+            // 2. Cập nhật fields
+            existing.setStartTime(sessionDto.getStartTime());
+            existing.setEndTime(sessionDto.getEndTime());
+            existing.setRoom(sessionDto.getRoom());
+            existing.setType(sessionDto.getType());
+            existing.setDate(sessionDto.getDate());
+
+            // Nếu DTO gửi lên có courseId mới
+            if (sessionDto.getCourseId() != null) {
+                Course course = courseRepository.findById(sessionDto.getCourseId())
+                        .orElseThrow(() -> new RuntimeException("Course not found"));
+                existing.setCourse(course);
+            }
+
+            // 3. Save sẽ trigger UPDATE vì entity có id
+            sessionRepository.save(existing);
+
+            return Response.builder()
+                    .statusCode(200)
+                    .message("Successfully updated session")
+                    .build();
+
+        } catch (Exception e) {
+            return Response.builder()
+                    .statusCode(400)
+                    .message("Failed to update session: " + e.getMessage())
+                    .build();
+        }
+    }
+
+
 
 
     // Dùng lại method có sẵn trong adminService

@@ -26,4 +26,5 @@ public class CourseDTO {
     private Long tutorId;
     private int totalLessons;
     private int totalSessions;
+    private int totalEnrollments;
 }

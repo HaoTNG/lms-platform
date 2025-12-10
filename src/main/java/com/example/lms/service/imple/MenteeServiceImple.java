@@ -1,5 +1,12 @@
 package com.example.lms.service.imple;
 
+import com.example.lms.dto.QuestionDTO;
+import com.example.lms.dto.ReportTicketDTO;
+import com.example.lms.dto.Response;
+import com.example.lms.dto.SessionDTO;
+import com.example.lms.mapper.QuestionMapper;
+import com.example.lms.mapper.ReportTicketMapper;
+import com.example.lms.mapper.SessionMapper;
 import com.example.lms.model.*;
 import com.example.lms.repository.*;
 import com.example.lms.service.interf.MenteeService;
@@ -30,6 +37,9 @@ public class MenteeServiceImple implements MenteeService {
     private final ConversationRepository conversationRepository;
     private final ForumRepository forumRepository;
     private final MessageRepository messageRepository;
+    private final SessionMapper sessionMapper;
+    private final QuestionMapper questionMapper;
+    private final ReportTicketMapper reportTicketMapper;
 
     // ============================= PROFILE =============================
     @Override
@@ -44,7 +54,8 @@ public class MenteeServiceImple implements MenteeService {
         Mentee mentee = menteeRepository.findById(menteeId)
                 .orElseThrow(() -> new RuntimeException("Mentee not found"));
         List<Enrollment> Gotenrollments = mentee.getEnrollments();
-        List<Enrollment> enrollments = Gotenrollments.stream().filter(e -> e.getStatus().name().equals("ACTIVE")).toList();
+       // List<Enrollment> enrollments = Gotenrollments.stream().filter(e -> e.getStatus().name().equals("ACTIVE")).toList();
+        List<Enrollment> enrollments = Gotenrollments.stream().toList();
         List<Course> courses = new ArrayList<>(enrollments.size());
         for (Enrollment enrollment : enrollments) {
             courses.add(enrollment.getCourse());
@@ -66,19 +77,50 @@ public class MenteeServiceImple implements MenteeService {
 
 
     @Override
-    public Enrollment enrollCourse(Long menteeId, Long courseId) {
-        Mentee mentee = menteeRepository.findById(menteeId)
-                .orElseThrow(() -> new RuntimeException("Mentee not found"));
+    public Response enrollCourse(Long menteeId, Long courseId) {
+        try{
+            Mentee mentee = menteeRepository.findById(menteeId)
+                    .orElseThrow(() -> new RuntimeException("Mentee not found"));
 
-        Course course = courseRepository.findById(courseId)
-                .orElseThrow(() -> new RuntimeException("Course not found"));
+            Course course = courseRepository.findById(courseId)
+                    .orElseThrow(() -> new RuntimeException("Course not found"));
 
-        Enrollment enrollment = Enrollment.builder()
-                .mentee(mentee)
-                .course(course)
-                .build();
+            Enrollment enrollment = Enrollment.builder()
+                    .mentee(mentee)
+                    .course(course)
+                    .build();
 
-        return enrollmentRepository.save(enrollment);
+            enrollmentRepository.save(enrollment);
+            return Response.builder().statusCode(200).message("Success").build();
+        } catch (Exception e) {
+            return Response.builder().statusCode(500).message("Failed").build();
+        }
+    }
+    @Override
+    public Response unenrollCourse(Long menteeId, Long courseId) {
+        Response response = new Response();
+
+        try {
+            // 1. Tìm mentee
+            Mentee mentee = menteeRepository.findById(menteeId)
+                    .orElseThrow(() -> new RuntimeException("Mentee not found"));
+
+            // 2. Tìm course
+            Course course = courseRepository.findById(courseId)
+                    .orElseThrow(() -> new RuntimeException("Course not found"));
+
+            // 3. Tìm enrollment theo mentee + course
+            Enrollment enrollment = enrollmentRepository
+                    .findByMentee_IdAndCourse_CourseId(menteeId, courseId)
+                    .orElseThrow(() -> new RuntimeException("Enrollment not found for this mentee and course"));
+
+            // 4. Xoá
+            enrollmentRepository.delete(enrollment);
+
+            return Response.builder().statusCode(200).message("Success").build();
+        } catch (Exception e) {
+            return Response.builder().statusCode(500).message("Failed").build();
+        }
     }
 
     // ============================= LESSON / RESOURCES =============================
@@ -132,6 +174,13 @@ public class MenteeServiceImple implements MenteeService {
                 .orElseThrow(() -> new RuntimeException("Course not found"));
         return course.getSessions();
     }
+    @Override
+    public SessionDTO getSessionById(Long sessionId) {
+        Session session = sessionRepository.findById(sessionId)
+                .orElseThrow(() -> new RuntimeException("Session not found"));
+
+        return sessionMapper.toSessionDTO(session);
+    }
 
     @Override
     public List<Session> getMyUpcomingSessions(Long menteeId) {
@@ -181,6 +230,38 @@ public class MenteeServiceImple implements MenteeService {
 
         return questionRepository.save(question);
     }
+    @Override
+    public List<QuestionDTO> getQuestionsByForum(Long forumId) {
+
+        // Kiểm tra forum tồn tại
+        forumRepository.findById(forumId)
+                .orElseThrow(() -> new RuntimeException("Forum not found"));
+
+        // Query toàn bộ câu hỏi theo forumId
+        return questionRepository.findByForumId(forumId)
+                .stream()
+                .map(questionMapper::toQuestionDTO)
+                .toList();
+    }
+    @Override
+    public Forum createForum(Long sessionId) {
+
+        Session session = sessionRepository.findById(sessionId)
+                .orElseThrow(() -> new RuntimeException("Session not found"));
+
+        // Nếu đã có forum thì trả về luôn
+        if (session.getForum() != null) {
+            return session.getForum();
+        }
+
+        Forum forum = new Forum();
+        forum.setSession(session); // ID của forum tự = sessionId
+
+        Forum saved = forumRepository.save(forum);
+
+        return saved;
+    }
+
 
     @Override
     public List<Question> getMyQuestions(Long menteeId) {
@@ -206,8 +287,15 @@ public class MenteeServiceImple implements MenteeService {
     }
 
     @Override
-    public List<ReportTicket> getMyReports(Long menteeId) {
-        return reportTicketRepository.findByMenteeId(menteeId);
+    public Response getMyReports(Long menteeId) {
+        try{
+            List<ReportTicket> rp = reportTicketRepository.findByMenteeId(menteeId);
+            List<ReportTicketDTO> rpDTO = rp.stream().map(reportTicketMapper::toDTO).toList();
+
+            return Response.builder().statusCode(200).message("success").data(rpDTO).build();
+        }catch (Exception e){
+            return Response.builder().statusCode(500).message("failed").build();
+        }
     }
 
     // ============================= MESSAGING =============================

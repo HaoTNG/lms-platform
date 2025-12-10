@@ -11,5 +11,6 @@ public class SubmissionDTO {
     private Long menteeId;
     private String textAnswer;
     private String fileUrl;
+    private Double grade;
 
 }

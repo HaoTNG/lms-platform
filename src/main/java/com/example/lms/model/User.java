@@ -1,5 +1,6 @@
 package com.example.lms.model;
 
+import com.fasterxml.jackson.annotation.JsonBackReference;
 import jakarta.persistence.*;
 import lombok.Data;
 import java.util.List;
@@ -24,6 +25,7 @@ public abstract class User {
     private String email;
 
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL)
+    @JsonBackReference
     private List<AnnouncementUser> announcementUsers;
 
 }

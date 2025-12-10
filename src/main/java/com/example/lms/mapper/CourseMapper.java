@@ -37,6 +37,7 @@ public class CourseMapper {
                 .subjectRegistrationId(subjectRegistrationId)
                 .tutorId(tutorId)
                 .tutorName(tutorName)
+                .totalEnrollments(course.getEnrollments().size())
                 .build();
     }
 

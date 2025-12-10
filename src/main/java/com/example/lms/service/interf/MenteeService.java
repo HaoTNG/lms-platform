@@ -14,8 +14,8 @@ public interface MenteeService {
     List<Course> getMyCourses(Long menteeId);
     Course getMyCourseDetail(Long menteeId, Long courseId);
 
-    Enrollment enrollCourse(Long menteeId, Long courseId);
-
+    Response enrollCourse(Long menteeId, Long courseId);
+    Response unenrollCourse(Long menteeId, Long courseId);
     // ===== LESSON / RESOURCE / EXERCISE =====
     List<Lesson> getLessonsByCourse(Long courseId);
 
@@ -30,7 +30,7 @@ public interface MenteeService {
 
     // ===== SESSION / ATTEND / JOIN CLASS =====
     List<Session> getSessionsByCourse(Long courseId);
-
+    SessionDTO getSessionById(Long sessionId);
     List<Session> getMyUpcomingSessions(Long menteeId);
 
     // ===== RATING =====
@@ -40,13 +40,14 @@ public interface MenteeService {
 
     // ===== QUESTION / FORUM =====
     Question askQuestion(Long menteeId, Long lessonId, String content);
-
+    List<QuestionDTO> getQuestionsByForum(Long forumId);
+    Forum createForum(Long sessionId);
     List<Question> getMyQuestions(Long menteeId);
 
     // ===== REPORT TICKET =====
     ReportTicket createReport(Long menteeId, String title, String content);
 
-    List<ReportTicket> getMyReports(Long menteeId);
+    Response getMyReports(Long menteeId);
 
     // ===== MESSAGING =====
     Conversation openConversation(Long menteeId, Long tutorId);

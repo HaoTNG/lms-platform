@@ -7,6 +7,8 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
 import java.util.List;
+import java.util.Optional;
+
 @Repository
 public interface SubmissionRepository extends JpaRepository<Submission, Long> {
 
@@ -37,4 +39,5 @@ public interface SubmissionRepository extends JpaRepository<Submission, Long> {
     Page<Submission> findByExerciseId(Long exerciseId, Pageable pageable);
 
 
+    Optional<Submission> findByMenteeIdAndExerciseId(Long menteeId, Long exerciseId);
 }

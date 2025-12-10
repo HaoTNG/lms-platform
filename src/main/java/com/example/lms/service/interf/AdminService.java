@@ -1,10 +1,7 @@
 package com.example.lms.service.interf;
 
 
-import com.example.lms.dto.CourseDTO;
-import com.example.lms.dto.Response;
-import com.example.lms.dto.UserDTO;
-import com.example.lms.dto.AnnouncementDTO;
+import com.example.lms.dto.*;
 import com.example.lms.model.Course;
 import com.example.lms.model.ReportTicket;
 import com.example.lms.model.User;
@@ -20,7 +17,7 @@ public interface AdminService {
     Response updateCourse(Long courseId, CourseDTO dto);
     Response getCourseById(Long courseId);
     // Report Ticket Management
-    Response createReportTicket(ReportTicket reportTicket);
+    Response createReportTicket(ReportTicketDTO reportTicket);
     Response deleteReportTicket(Long ticketId);
     Response getAllReportTickets(int page, int size);
     Response getReportTicketById(Long ticketId);
@@ -35,4 +32,14 @@ public interface AdminService {
     Response getAllAnnouncements(Integer page, Integer size, String recipientType, String title, Long adminId);
     Response getAnnouncementsByAdmin(Long adminId, int page, int size);
     Response deleteAnnouncement(Long announcementId);
+
+
+
+    // registration
+
+    Response getAllsubjectRegistration();
+
+    //enroll
+    Response approveByAvailableSlots(Long courseId);
+    Response getEnrollmentStats(Long courseId);
 }

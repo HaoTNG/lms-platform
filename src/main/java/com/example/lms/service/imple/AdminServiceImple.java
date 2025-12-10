@@ -1,10 +1,7 @@
 package com.example.lms.service.imple;
 
 import com.example.lms.dto.*;
-import com.example.lms.enums.CourseStatus;
-import com.example.lms.enums.RecipientType;
-import com.example.lms.enums.RegistrationStatus;
-import com.example.lms.enums.ReportTicketStatus;
+import com.example.lms.enums.*;
 import com.example.lms.mapper.ReportTicketMapper;
 import com.example.lms.model.*;
 import org.springframework.data.jpa.domain.Specification;
@@ -24,7 +21,9 @@ import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
+import java.util.Map;
 import java.util.function.Supplier;
 
 
@@ -43,6 +42,7 @@ public class AdminServiceImple implements AdminService {
     private final AnnouncementUserRepository announcementUserRepository;
     private final AnnouncementMapper announcementMapper;
     private final ReportTicketMapper reportTicketMapper;
+    private final EnrollmentRepository enrollmentRepository;
    public Response manageUser(int page, int size, String search, Class<? extends User> roleClass) {
         try {
             Pageable pageable = PageRequest.of(page, size, Sort.by("id").ascending());
@@ -343,21 +343,24 @@ public class AdminServiceImple implements AdminService {
 
     // ==================== REPORT TICKET MANAGEMENT ====================
 
-    public Response createReportTicket(ReportTicket reportTicket) {
+    public Response createReportTicket(ReportTicketDTO reportTicket) {
         try {
-            // TODO: sau này bạn lấy mentee từ JWT → hiện tại hardcode 2L
-            Mentee mentee = menteeRepository.findMenteeById(2L);
-            reportTicket.setMentee(mentee);
 
-            reportTicket.setAdminResponse(null);
-            reportTicket.setResolvedBy(null);
+            Long menteeId = getCurrentUserId();
+            Mentee mentee = menteeRepository.findMenteeById(menteeId);
 
-            var saved = reportTicketRepository.save(reportTicket);
+            ReportTicket rp = new ReportTicket();
+            rp.setMentee(mentee);
+            rp.setTitle(reportTicket.getTitle());
+            rp.setDescription(reportTicket.getDescription());
+            rp.setAdminResponse(null);
+            rp.setResolvedBy(null);
+
+            var saved = reportTicketRepository.save(rp);
 
             return Response.builder()
                     .statusCode(200)
                     .message("Report ticket created successfully")
-                    .reportTicket(saved)
                     .build();
 
         } catch (Exception e) {
@@ -676,6 +679,100 @@ public class AdminServiceImple implements AdminService {
         }
         return response;
     }
+
+    public Response getAllsubjectRegistration() {
+        try {
+            List<SubjectRegistration> all = subjectRegistrationRepository
+                    .findAll(Sort.by(Sort.Direction.DESC, "registeredAt"));
+
+            // Lọc chỉ lấy PENDING
+            List<SubjectRegistration> pendingOnly = all.stream()
+                    .filter(sr -> sr.getRegistrationStatus() == RegistrationStatus.PENDING)
+                    .toList();
+
+            return Response.builder()
+                    .statusCode(200)
+                    .data(pendingOnly)
+                    .build();
+
+        } catch (Exception e) {
+            return Response.builder()
+                    .statusCode(400)
+                    .message("Failed to retrieve subjectRegistrations: " + e.getMessage())
+                    .build();
+        }
+    }
+
+
+    @Override
+    public Response getEnrollmentStats(Long courseId) {
+        try {
+            var all = enrollmentRepository.findByCourse_CourseId(courseId);
+
+            long approved = all.stream()
+                    .filter(e -> e.getStatus() == EnrollmentStatus.ACTIVE)
+                    .count();
+
+            long pending = all.stream()
+                    .filter(e -> e.getStatus() == EnrollmentStatus.PENDING)
+                    .count();
+
+            return Response.builder().statusCode(200).data(Map.of(
+                    "approved", approved,
+                    "pending", pending,
+                    "total", approved + pending
+            )).build();
+        } catch (Exception e) {
+            return Response.builder().statusCode(400).message("Failed to retrieve enrollments: " + e.getMessage()).build();
+        }
+    }
+
+    @Override
+    public Response approveByAvailableSlots(Long courseId) {
+        try {
+            Course course = courseRepository.findById(courseId)
+                    .orElseThrow(() -> new RuntimeException("Course not found"));
+
+            var maxMentee = course.getMaxMentee();
+
+            List<Enrollment> all = enrollmentRepository.findByCourse_CourseId(courseId);
+
+            long approvedCount = all.stream()
+                    .filter(e -> e.getStatus() == EnrollmentStatus.ACTIVE)
+                    .count();
+
+            Long slots = maxMentee - (Long) approvedCount;
+
+            if (slots <= 0) {
+                return Response.builder().statusCode(200).message("no available slot").build();
+            }
+
+            // Lấy danh sách pending và sort theo thời gian đăng ký
+            List<Enrollment> toApprove = all.stream()
+                    .filter(e -> e.getStatus() == EnrollmentStatus.PENDING)
+                    .sorted(Comparator.comparing(Enrollment::getEnrolledAt)) // FIFO
+                    .limit(slots)
+                    .toList();
+
+            if (toApprove.isEmpty()) {
+                return Response.builder().statusCode(200).message("No pending enrollments to approve").build();
+            }
+
+            // Approve
+            toApprove.forEach(e -> e.setStatus(EnrollmentStatus.ACTIVE));
+            enrollmentRepository.saveAll(toApprove);
+
+            return Response.builder().statusCode(200).data(Map.of(
+                    "approvedNow", toApprove.size(),
+                    "totalApproved", approvedCount + toApprove.size(),
+                    "slotsRemaining", maxMentee - (approvedCount + toApprove.size())
+            )).build();
+
+        } catch (Exception e) {
+            return Response.builder().statusCode(400).message("Failed to retrieve enrollments: " + e.getMessage()).build();
+        }
+    }
+
 
     /**
      * Lấy userId từ SecurityContext (JWT token)

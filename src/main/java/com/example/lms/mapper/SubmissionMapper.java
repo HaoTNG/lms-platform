@@ -16,6 +16,7 @@ public class SubmissionMapper {
         dto.setId(submission.getId());
         dto.setTextAnswer(submission.getTextAnswer());
         dto.setFileUrl(submission.getFileUrl());
+        dto.setGrade(submission.getGrade());
 
         if (submission.getExercise() != null) {
             dto.setExerciseId(submission.getExercise().getId());
@@ -35,6 +36,7 @@ public class SubmissionMapper {
                 .id(dto.getId())
                 .textAnswer(dto.getTextAnswer())
                 .fileUrl(dto.getFileUrl())
+                .grade(dto.getGrade())
                 .build();
 
         if (dto.getExerciseId() != null) {

@@ -19,6 +19,5 @@ public class ExerciseDTO {
     private String question;
     private LocalDateTime deadline;
     private Integer attemptLimit;
-    private List<Submission> submissions;
     private int submissionCount;
 }

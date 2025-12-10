@@ -3,6 +3,10 @@ package com.example.lms.controller;
 import com.example.lms.dto.*;
 import com.example.lms.mapper.*;
 import com.example.lms.model.*;
+import com.example.lms.repository.ExerciseRepository;
+import com.example.lms.repository.LessonRepository;
+import com.example.lms.repository.SubmissionRepository;
+import com.example.lms.service.interf.AdminService;
 import com.example.lms.service.interf.MenteeService;
 import com.example.lms.dto.Response;
 import com.example.lms.service.interf.UserService;
@@ -11,8 +15,10 @@ import lombok.RequiredArgsConstructor;
 
 import org.springframework.web.bind.annotation.*;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.ArrayList;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 @RestController
@@ -32,6 +38,10 @@ public class MenteeController {
     private final ConversationMapper conversationMapper;
     private final MessageMapper messageMapper;
     private final UserService userService;
+    private final AdminService adminService;
+    private final LessonRepository lessonRepository;
+    private final ExerciseRepository exerciseRepository;
+    private final SubmissionRepository submissionRepository;
     // =============================
     // LẤY THÔNG TIN MENTEE
     // =============================
@@ -48,8 +58,16 @@ public class MenteeController {
     public ResponseEntity<?> enrollCourse(
             @RequestBody EnrollCourseRequest request) {
         Long id = userService.getCurrentUserId();
-        menteeService.enrollCourse(id, request.getCourseId());
-        return ResponseEntity.ok("You have successfully enrolled in the course.");
+        Response response = menteeService.enrollCourse(id, request.getCourseId());
+        return ResponseEntity.status(200).body(response.getStatusCode());
+    }
+
+    @PostMapping("/unenroll")
+    public ResponseEntity<?> unenrollCourse(
+            @RequestBody EnrollCourseRequest request) {
+        Long id = userService.getCurrentUserId();
+        Response response = menteeService.unenrollCourse(id, request.getCourseId());
+        return ResponseEntity.status(200).body(response.getStatusCode());
     }
 
 
@@ -65,6 +83,18 @@ public class MenteeController {
             dtoList.add(courseMapper.toDTO(course));
         }
         return ResponseEntity.ok(dtoList);
+    }
+
+    @GetMapping("/courses")
+    public ResponseEntity<Response> getAllCourses(
+            @RequestParam(name = "page",defaultValue = "0") int page,
+            @RequestParam(name = "size",defaultValue = "10") int size,
+            @RequestParam(required = false) String tutor,
+            @RequestParam(required = false) String status,
+            @RequestParam(required = false) String course_name
+    ) {
+        Response response = adminService.getAllCourses(page, size, tutor, status, course_name  );
+        return ResponseEntity.status(response.getStatusCode()).body(response);
     }
 
     // =============================
@@ -93,6 +123,12 @@ public class MenteeController {
         return ResponseEntity.ok(dtoList);
     }
 
+    @GetMapping("/lesson/{lessonId}")
+    public ResponseEntity<LessonDTO> getLessonDetail(@PathVariable Long lessonId) {
+        var lesson = lessonRepository.getLessonById(lessonId);
+        var lessonDTO = lessonMapper.toLessonDTO(lesson);
+        return ResponseEntity.ok(lessonDTO);
+    }
     // =============================
     // LẤY TÀI NGUYÊN TRONG BÀI GIẢNG
     // =============================
@@ -119,6 +155,9 @@ public class MenteeController {
         return ResponseEntity.ok(dtoList);
     }
 
+
+
+
     // =============================
     // NỘP BÀI
     // =============================
@@ -132,9 +171,58 @@ public class MenteeController {
         dto.setExerciseId(exerciseId);
 
         Submission entity = submissionMapper.toSubmission(dto);
-        Submission saved = menteeService.submitExercise(menteeId, exerciseId, entity);
+
+        // kiểm tra đã nộp chưa
+        Optional<Submission> existingOpt = submissionRepository.findByMenteeIdAndExerciseId(menteeId, exerciseId);
+        Submission saved;
+        if (existingOpt.isPresent()) {
+            Submission existing = existingOpt.get();
+            existing.setTextAnswer(entity.getTextAnswer()); // hoặc set các field khác
+            existing.setSubmittedAt(LocalDateTime.now());
+            saved = submissionRepository.save(existing);
+        } else {
+            saved = submissionRepository.save(entity);
+        }
 
         return ResponseEntity.ok(submissionMapper.toSubmissionDTO(saved));
+    }
+
+    @GetMapping("/exercise/{exerciseId}")
+    public ResponseEntity<ExerciseDTO> getExercise(@PathVariable Long exerciseId) {
+        Exercise exercise = exerciseRepository.findById(exerciseId).orElseThrow(() -> new RuntimeException("Exercise not found"));
+        var exerciseDTO = exerciseMapper.toExerciseDTO(exercise);
+        return ResponseEntity.ok(exerciseDTO);
+    }
+
+    @GetMapping("/exercise/{exerciseId}/submissions")
+    public ResponseEntity<List<SubmissionDTO>> getSubmissions(@PathVariable Long exerciseId) {
+        Long menteeId = userService.getCurrentUserId(); // Lấy user hiện tại
+
+        Exercise exercise = exerciseRepository.findById(exerciseId)
+                .orElseThrow(() -> new RuntimeException("Exercise not found"));
+
+        // Lọc chỉ submission của menteeId hiện tại
+        List<SubmissionDTO> dtos = exercise.getSubmissions().stream()
+                .filter(submission -> submission.getMentee().getId().equals(menteeId))
+                .map(submissionMapper::toSubmissionDTO)
+                .toList();
+
+        return ResponseEntity.ok(dtos);
+    }
+
+
+    @PostMapping("/report-tickets")
+    public ResponseEntity<Response> createReportTicket(@RequestBody ReportTicketDTO reportTicket) {
+        Response response = adminService.createReportTicket(reportTicket);
+        return ResponseEntity.status(response.getStatusCode()).body(response);
+    }
+    @GetMapping("/report-tickets")
+    public ResponseEntity<Response> getAllReportTickets(
+
+    ) {
+        Long menteeId = userService.getCurrentUserId();
+        Response response = menteeService.getMyReports(menteeId);
+        return ResponseEntity.status(response.getStatusCode()).body(response);
     }
 
     // =============================
@@ -148,6 +236,12 @@ public class MenteeController {
             dtoList.add(sessionMapper.toSessionDTO(session));
         }
         return ResponseEntity.ok(dtoList);
+    }
+
+    @GetMapping("/course/sessions/{sessionId}")
+    public ResponseEntity<SessionDTO> getSession(@PathVariable Long sessionId) {
+        SessionDTO session = menteeService.getSessionById(sessionId);
+        return ResponseEntity.status(200).body(session);
     }
 
     // =============================
@@ -194,10 +288,16 @@ public class MenteeController {
         return ResponseEntity.ok(dtoList);
     }
 
+    @GetMapping("/forum/{forumId}/questions")
+    public ResponseEntity<List<QuestionDTO>> getQuestionsByForum(@PathVariable Long forumId) {
+        return ResponseEntity.ok(menteeService.getQuestionsByForum(forumId));
+    }
+
+
     // =============================
     // TẠO CÂU HỎI
     // =============================
-    @PostMapping("/lesson/{forumId}/questions")
+    @PostMapping("/forum/{forumId}/questions")
     public ResponseEntity<String> askQuestion(
             @PathVariable Long forumId,
             @RequestBody AskQuestionRequest request) {
@@ -207,6 +307,15 @@ public class MenteeController {
         return ResponseEntity.ok("Your question has been submitted successfully.");
     }
 
+    @PostMapping("/forum/{sessionId}")
+    public ResponseEntity<?> createForum(
+            @PathVariable Long sessionId) {
+
+        Forum forum = menteeService.createForum(sessionId);
+
+        return ResponseEntity.ok(200);
+
+    }
     // =============================
     // LẤY CONVERSATION
     // =============================

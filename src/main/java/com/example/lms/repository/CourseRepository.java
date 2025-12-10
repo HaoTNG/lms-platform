@@ -24,4 +24,6 @@ public interface CourseRepository extends JpaRepository<Course, Long>, JpaSpecif
     Long countTotalEnrollments();
 
     Object findBySubjectRegistration(Optional<Subject> subjectRegistration);
+
+    Course getCourseByCourseId(Long id);
 }
