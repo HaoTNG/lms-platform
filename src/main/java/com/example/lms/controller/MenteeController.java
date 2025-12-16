@@ -85,6 +85,17 @@ public class MenteeController {
         return ResponseEntity.ok(dtoList);
     }
 
+    @GetMapping("/myenrollcourses")
+    public ResponseEntity<List<CourseDTO>> getMyEnrollCourses() {
+        Long id = userService.getCurrentUserId();
+        List<Course> courses = menteeService.getMyEnrollCourses(id);
+        List<CourseDTO> dtoList = new ArrayList<>();
+        for (Course course : courses) {
+            dtoList.add(courseMapper.toDTO(course));
+        }
+        return ResponseEntity.ok(dtoList);
+    }
+
     @GetMapping("/courses")
     public ResponseEntity<Response> getAllCourses(
             @RequestParam(name = "page",defaultValue = "0") int page,

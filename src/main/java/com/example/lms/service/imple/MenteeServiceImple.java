@@ -50,12 +50,26 @@ public class MenteeServiceImple implements MenteeService {
 
     // ============================= COURSE =============================
     @Override
+    public List<Course> getMyEnrollCourses(Long menteeId) {
+        Mentee mentee = menteeRepository.findById(menteeId)
+                .orElseThrow(() -> new RuntimeException("Mentee not found"));
+        List<Enrollment> Gotenrollments = mentee.getEnrollments();
+        //List<Enrollment> enrollments = Gotenrollments.stream().filter(e -> e.getStatus().name().equals("ACTIVE")).toList();
+        List<Enrollment> enrollments = Gotenrollments.stream().toList();
+        List<Course> courses = new ArrayList<>(enrollments.size());
+        for (Enrollment enrollment : enrollments) {
+            courses.add(enrollment.getCourse());
+        }
+        return courses;
+    }
+
+    @Override
     public List<Course> getMyCourses(Long menteeId) {
         Mentee mentee = menteeRepository.findById(menteeId)
                 .orElseThrow(() -> new RuntimeException("Mentee not found"));
         List<Enrollment> Gotenrollments = mentee.getEnrollments();
-       // List<Enrollment> enrollments = Gotenrollments.stream().filter(e -> e.getStatus().name().equals("ACTIVE")).toList();
-        List<Enrollment> enrollments = Gotenrollments.stream().toList();
+        List<Enrollment> enrollments = Gotenrollments.stream().filter(e -> e.getStatus().name().equals("ACTIVE")).toList();
+        //List<Enrollment> enrollments = Gotenrollments.stream().toList();
         List<Course> courses = new ArrayList<>(enrollments.size());
         for (Enrollment enrollment : enrollments) {
             courses.add(enrollment.getCourse());

@@ -11,6 +11,7 @@ public interface MenteeService {
     Mentee getMyProfile(Long menteeId);
 
     // ===== COURSE / ENROLLMENT =====
+    List<Course> getMyEnrollCourses(Long menteeId);
     List<Course> getMyCourses(Long menteeId);
     Course getMyCourseDetail(Long menteeId, Long courseId);
 
