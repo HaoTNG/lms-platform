@@ -977,6 +977,7 @@ This project is proprietary and intended for educational purposes only.
 
 ---
 
+Frontend: https://github.com/HaoTNG/lms-frontend
 **Last Updated**: February 25, 2026  
 **Version**: 1.0.0  
 **Status**: Active Development
