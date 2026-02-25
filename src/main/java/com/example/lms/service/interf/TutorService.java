@@ -2,7 +2,6 @@ package com.example.lms.service.interf;
 
 import com.example.lms.dto.*;
 import com.example.lms.model.Course;
-import com.example.lms.model.Question;
 
 public interface TutorService {
     // Course management

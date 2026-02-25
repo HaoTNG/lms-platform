@@ -6,7 +6,6 @@ import com.example.lms.dto.*;
 import com.example.lms.model.*;
 import com.example.lms.service.interf.AdminService;
 import com.example.lms.service.interf.AdminAnalyticsService;
-import com.example.lms.service.interf.TutorService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
